@@ -1,0 +1,23 @@
+import "@testing-library/jest-dom/vitest";
+import { vi } from "vitest";
+
+// Mock SpeechRecognition API (not available in jsdom)
+class MockSpeechRecognition {
+  constructor() {
+    this.continuous = false;
+    this.interimResults = false;
+    this.lang = "en-US";
+    this.onresult = null;
+    this.onerror = null;
+    this.onend = null;
+  }
+  start() {}
+  stop() {}
+  abort() {}
+}
+
+vi.stubGlobal("SpeechRecognition", MockSpeechRecognition);
+vi.stubGlobal("webkitSpeechRecognition", MockSpeechRecognition);
+
+// Mock scrollTo
+vi.stubGlobal("scrollTo", vi.fn());

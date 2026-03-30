@@ -1,6 +1,117 @@
-const { useState, useEffect, useRef } = React;
+import { useState, useEffect, useRef } from "react";
 
-function SmartTeleprompter() {
+function Icon({ name }) {
+  return (
+    <img
+      src={`https://unpkg.com/heroicons@2.1.1/24/outline/${name}.svg`}
+      width="22"
+      height="22"
+      style={{ filter: "invert(1) brightness(2)" }}
+      alt=""
+      aria-hidden="true"
+    />
+  );
+}
+
+function IconButton({
+  onClick,
+  ariaLabel,
+  tooltipTitle,
+  tooltipDesc,
+  children,
+  style,
+  disabled,
+  uiOpacity = 0.9,
+}) {
+  const [showTip, setShowTip] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const tipTimer = useRef(null);
+  const buttonRef = useRef(null);
+
+  const openWithDelay = () => {
+    if (tipTimer.current) clearTimeout(tipTimer.current);
+    tipTimer.current = setTimeout(() => {
+      if (buttonRef.current) {
+        const rect = buttonRef.current.getBoundingClientRect();
+        setTooltipPosition({
+          top: rect.bottom + window.scrollY + 8,
+          left: rect.left + window.scrollX + rect.width / 2,
+        });
+      }
+      setShowTip(true);
+    }, 200);
+  };
+
+  const closeTip = () => {
+    if (tipTimer.current) clearTimeout(tipTimer.current);
+    setShowTip(false);
+  };
+
+  return (
+    <div
+      onMouseEnter={openWithDelay}
+      onMouseLeave={closeTip}
+      onFocus={openWithDelay}
+      onBlur={closeTip}
+      style={{ position: "relative", display: "inline-block", zIndex: 1 }}
+    >
+      <button
+        ref={buttonRef}
+        onClick={onClick}
+        aria-label={ariaLabel}
+        disabled={disabled}
+        style={{
+          width: 44,
+          height: 44,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          border: "none",
+          borderRadius: 8,
+          background: "#0f0f0f",
+          color: "white",
+          cursor: "pointer",
+          opacity: uiOpacity,
+          ...style,
+        }}
+      >
+        {children}
+      </button>
+      {showTip && (
+        <div
+          style={{
+            position: "fixed",
+            top: tooltipPosition.top,
+            left: tooltipPosition.left,
+            transform: "translateX(-50%)",
+            background: "rgba(0,0,0,0.9)",
+            color: "white",
+            padding: "8px 12px",
+            borderRadius: 8,
+            whiteSpace: "nowrap",
+            boxShadow: "0 6px 20px rgba(0,0,0,0.4)",
+            zIndex: 99999,
+            pointerEvents: "none",
+            fontSize: "13px",
+            border: "1px solid rgba(255,255,255,0.1)",
+            maxWidth: "300px",
+            wordWrap: "break-word",
+          }}
+          role="tooltip"
+        >
+          <div style={{ fontWeight: "bold", marginBottom: 4, fontSize: 13 }}>
+            {tooltipTitle}
+          </div>
+          {tooltipDesc && (
+            <div style={{ fontSize: 12, opacity: 0.8 }}>{tooltipDesc}</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function SmartTeleprompter() {
   const [text, setText] =
     useState(`Welcome to Smart Teleprompter the free, open-source teleprompter application that uses real-time speech recognition to automatically follow your voice as you read.
 
@@ -27,15 +138,18 @@ R - Reset to beginning
 L - Language selection
 E - Settings menu
 S - Script editor
+B - My Scripts library
 F - Fullscreen mode
 M - Mirror text horizontally
+? - Show keyboard shortcuts
 
 KEY FEATURES
 - Voice-controlled scrolling with 20+ language support
+- Script library — save, edit, and load up to 50 scripts with per-script language
 - Adjustable font size, colors, and spacing
 - Customizable scroll speed and text positioning
 - Camera aim indicator for perfect alignment
-- Import scripts from .txt, .md, or .pdf files
+- Import scripts from .txt or .md files
 - Horizontal mirroring for teleprompter hardware
 - Paragraph and word highlighting modes
 
@@ -51,7 +165,7 @@ TIPS FOR BEST RESULTS
 - Stable internet connection required (5+ Mbps recommended)
 - Speak at natural pace with clear pronunciation
 
-This project is completely free and open source. If you find it useful, consider supporting development at smartteleprompter.com
+This project is completely free and open source. If you find it useful, consider supporting development at smarttelepromter.com
 
 Happy recording!`);
 
@@ -83,12 +197,7 @@ Happy recording!`);
   const [sidePaddingVw, setSidePaddingVw] = useState(10);
   const [textAlignStyle, setTextAlignStyle] = useState("left");
   const [mirrorX, setMirrorX] = useState(false);
-  const [language, setLanguage] = useState(() => {
-    // Start with browser language, then load from localStorage after mount
-    return typeof navigator !== "undefined" && navigator.language
-      ? navigator.language
-      : "en-US";
-  });
+  const [language, setLanguage] = useState("en-US");
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const languageBtnRef = useRef(null);
   const [languageMenuPos, setLanguageMenuPos] = useState({ top: 0, left: 0 });
@@ -133,6 +242,17 @@ Happy recording!`);
   const [linesWords, setLinesWords] = useState([]);
   const [lineStartIndex, setLineStartIndex] = useState([]);
   const [showEditor, setShowEditor] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showScriptList, setShowScriptList] = useState(false);
+  const [savedScripts, setSavedScripts] = useState([]);
+  const [showAddScript, setShowAddScript] = useState(false);
+  const [editScriptId, setEditScriptId] = useState(null);
+  const [addScriptName, setAddScriptName] = useState("");
+  const [addScriptText, setAddScriptText] = useState("");
+  const [addScriptLanguage, setAddScriptLanguage] = useState("en-US");
+  const [scriptFormTouched, setScriptFormTouched] = useState(false);
+  const [deleteScriptConfirm, setDeleteScriptConfirm] = useState(null);
   const [renderMarkdown, setRenderMarkdown] = useState(false);
   const [paragraphSpacingPx, setParagraphSpacingPx] = useState(12);
   const [extraBottomSpacePx, setExtraBottomSpacePx] = useState(0);
@@ -375,10 +495,7 @@ Happy recording!`);
     sidePaddingVw: 20,
     textAlignStyle: "left",
     paragraphHighlightOpacity: 0.2,
-    language:
-      typeof navigator !== "undefined" && navigator.language
-        ? navigator.language
-        : "en-US",
+    language: "en-US",
     mirrorX: false,
   };
 
@@ -409,6 +526,114 @@ Happy recording!`);
     try {
       localStorage.removeItem(SETTINGS_KEY);
     } catch (_) {}
+  };
+
+  // Script Library
+  const SCRIPTS_KEY = "tp_scripts_v1";
+  const MAX_SCRIPTS = 50;
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SCRIPTS_KEY);
+      if (raw) {
+        setSavedScripts(JSON.parse(raw));
+      } else {
+        // Migrate existing script from settings if present
+        const seeds = [];
+        try {
+          const settingsRaw = localStorage.getItem(SETTINGS_KEY);
+          if (settingsRaw) {
+            const s = JSON.parse(settingsRaw);
+            if (s.text && s.text.trim()) {
+              seeds.push({
+                id: "migrated",
+                name: "My Script",
+                text: s.text,
+                language: s.language || "en-US",
+                savedAt: new Date().toISOString(),
+              });
+            }
+          }
+        } catch (_) {}
+        // Always include the demo script
+        seeds.push({
+          id: "demo",
+          name: "Demo Script",
+          text,
+          language: "en-US",
+          savedAt: new Date().toISOString(),
+        });
+        setSavedScripts(seeds);
+        localStorage.setItem(SCRIPTS_KEY, JSON.stringify(seeds));
+      }
+    } catch (_) {}
+  }, []);
+
+  const saveScriptsToStorage = (scripts) => {
+    setSavedScripts(scripts);
+    try {
+      localStorage.setItem(SCRIPTS_KEY, JSON.stringify(scripts));
+    } catch (_) {}
+  };
+
+  const openAddScriptModal = () => {
+    setEditScriptId(null);
+    setAddScriptName("");
+    setAddScriptText("");
+    setAddScriptLanguage("en-US");
+    setScriptFormTouched(false);
+    setShowAddScript(true);
+  };
+
+  const openEditScriptModal = (script) => {
+    setEditScriptId(script.id);
+    setAddScriptName(script.name);
+    setAddScriptText(script.text);
+    setAddScriptLanguage(script.language || "en-US");
+    setScriptFormTouched(false);
+    setShowAddScript(true);
+  };
+
+  const saveScript = (andLoad) => {
+    setScriptFormTouched(true);
+    const trimmed = (addScriptName || "").trim();
+    if (!trimmed || !addScriptText.trim() || !addScriptLanguage) return;
+
+    let updated;
+    if (editScriptId) {
+      updated = savedScripts.map((s) =>
+        s.id === editScriptId
+          ? { ...s, name: trimmed, text: addScriptText, language: addScriptLanguage, savedAt: new Date().toISOString() }
+          : s
+      );
+    } else {
+      const newScript = {
+        id: Date.now().toString(),
+        name: trimmed,
+        text: addScriptText,
+        language: addScriptLanguage,
+        savedAt: new Date().toISOString(),
+      };
+      updated = [newScript, ...savedScripts].slice(0, MAX_SCRIPTS);
+    }
+    saveScriptsToStorage(updated);
+    setShowAddScript(false);
+    setEditScriptId(null);
+    if (andLoad) {
+      setText(addScriptText);
+      setLanguage(addScriptLanguage);
+    }
+  };
+
+  const loadScript = (script) => {
+    setText(script.text);
+    if (script.language) setLanguage(script.language);
+  };
+
+  const confirmDeleteScript = () => {
+    if (!deleteScriptConfirm) return;
+    saveScriptsToStorage(savedScripts.filter((s) => s.id !== deleteScriptConfirm.id));
+    setDeleteScriptConfirm(null);
   };
 
   // Load settings on mount
@@ -513,16 +738,6 @@ Happy recording!`);
     } catch (_) {}
   }, [bgColor]);
 
-  // Setup pdf.js worker if available
-  useEffect(() => {
-    try {
-      if (window.pdfjsLib && window.pdfjsLib.GlobalWorkerOptions) {
-        window.pdfjsLib.GlobalWorkerOptions.workerSrc =
-          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
-      }
-    } catch (_) {}
-  }, []);
-
   const handleFileUpload = async (event) => {
     const file = event.target.files && event.target.files[0];
     if (!file) return;
@@ -531,174 +746,33 @@ Happy recording!`);
       if (ext === "txt" || ext === "md" || ext === "markdown") {
         const txt = await file.text();
         setText(txt);
-        // Always use plain text rendering for stability
         setRenderMarkdown(false);
         setShowEditor(true);
-      } else if (ext === "pdf") {
-        const ab = await file.arrayBuffer();
-        await parsePdfArrayBuffer(ab);
       } else {
-        alert("Υποστηρίζονται μόνο αρχεία .txt, .md και .pdf");
+        alert("Supported file types: .txt, .md");
       }
     } catch (e) {
       console.error(e);
-      alert("Αποτυχία φόρτωσης αρχείου");
+      alert("Failed to load file");
     } finally {
-      // reset input so same file can be reselected
       event.target.value = "";
     }
-  };
-
-  const parsePdfArrayBuffer = async (arrayBuffer) => {
-    const lib = window.pdfjsLib;
-    if (!lib) {
-      alert("Το PDF parser δεν φορτώθηκε");
-      return;
-    }
-    try {
-      if (lib.GlobalWorkerOptions) {
-        lib.GlobalWorkerOptions.workerSrc =
-          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
-      }
-      const task = lib.getDocument({ data: arrayBuffer });
-      const pdf = await task.promise;
-      let merged = "";
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        const strs = content.items.map((it) => it.str);
-        merged += strs.join(" ") + "\n\n";
-      }
-      setText(merged.trim());
-      setShowEditor(true);
-    } catch (err) {
-      console.error("PDF parse error", err);
-      alert("Δεν ήταν δυνατή η ανάγνωση του PDF");
-    }
-  };
-
-  const Icon = ({ name }) => (
-    <img
-      src={`https://unpkg.com/heroicons@2.1.1/24/outline/${name}.svg`}
-      width="22"
-      height="22"
-      style={{ filter: "invert(1) brightness(2)" }}
-      alt=""
-      aria-hidden="true"
-    />
-  );
-
-  const IconButton = ({
-    onClick,
-    ariaLabel,
-    tooltipTitle,
-    tooltipDesc,
-    children,
-    style,
-    disabled,
-  }) => {
-    const [showTip, setShowTip] = useState(false);
-    const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
-    const tipTimer = useRef(null);
-    const buttonRef = useRef(null);
-
-    const openWithDelay = () => {
-      if (tipTimer.current) clearTimeout(tipTimer.current);
-      tipTimer.current = setTimeout(() => {
-        if (buttonRef.current) {
-          const rect = buttonRef.current.getBoundingClientRect();
-          setTooltipPosition({
-            top: rect.bottom + window.scrollY + 8,
-            left: rect.left + window.scrollX + rect.width / 2,
-          });
-        }
-        setShowTip(true);
-      }, 200);
-    };
-
-    const closeTip = () => {
-      if (tipTimer.current) clearTimeout(tipTimer.current);
-      setShowTip(false);
-    };
-
-    return (
-      <div
-        onMouseEnter={openWithDelay}
-        onMouseLeave={closeTip}
-        onFocus={openWithDelay}
-        onBlur={closeTip}
-        style={{ position: "relative", display: "inline-block", zIndex: 1 }}
-      >
-        <button
-          ref={buttonRef}
-          onClick={onClick}
-          aria-label={ariaLabel}
-          disabled={disabled}
-          style={{
-            width: 44,
-            height: 44,
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            border: "none",
-            borderRadius: 8,
-            background: "#0f0f0f",
-            color: "white",
-            cursor: "pointer",
-            opacity: uiOpacity,
-            ...style,
-          }}
-        >
-          {children}
-        </button>
-        {showTip && (
-          <div
-            style={{
-              position: "fixed",
-              top: tooltipPosition.top,
-              left: tooltipPosition.left,
-              transform: "translateX(-50%)",
-              background: "rgba(0,0,0,0.9)",
-              color: "white",
-              padding: "8px 12px",
-              borderRadius: 8,
-              whiteSpace: "nowrap",
-              boxShadow: "0 6px 20px rgba(0,0,0,0.4)",
-              zIndex: 99999,
-              pointerEvents: "none",
-              fontSize: "13px",
-              border: "1px solid rgba(255,255,255,0.1)",
-              maxWidth: "300px",
-              wordWrap: "break-word",
-            }}
-            role="tooltip"
-          >
-            <div style={{ fontWeight: "bold", marginBottom: 4, fontSize: 13 }}>
-              {tooltipTitle}
-            </div>
-            {tooltipDesc && (
-              <div style={{ fontSize: 12, opacity: 0.8 }}>{tooltipDesc}</div>
-            )}
-          </div>
-        )}
-      </div>
-    );
   };
 
   const FileButton = ({ onFile }) => {
     const inputRef = useRef(null);
     return (
-      <IconButton
+      <IconButton uiOpacity={uiOpacity}
         onClick={() => inputRef.current && inputRef.current.click()}
         ariaLabel="Open File"
         tooltipTitle="Open File"
-        tooltipDesc="Import .txt/.md/.pdf"
+        tooltipDesc="Import .txt/.md"
       >
         <Icon name={"arrow-up-tray"} />
         <input
           ref={inputRef}
           type="file"
-          accept=".txt,.md,.markdown,.pdf,text/plain,text/markdown,application/pdf"
+          accept=".txt,.md,.markdown,text/plain,text/markdown"
           onChange={onFile}
           style={{ display: "none" }}
         />
@@ -1514,6 +1588,12 @@ Happy recording!`);
         setShowEditor((v) => !v);
         return;
       }
+      if (e.key === "b" || e.key === "B") {
+        e.preventDefault();
+        setShowEditor(true);
+        setShowScriptList((v) => !v);
+        return;
+      }
       if (e.key === "e" || e.key === "E") {
         e.preventDefault();
         setShowSettings((v) => !v);
@@ -1529,10 +1609,26 @@ Happy recording!`);
         setMirrorX((v) => !v);
         return;
       }
+      if (e.key === "?") {
+        e.preventDefault();
+        setShowShortcuts((v) => !v);
+        return;
+      }
+      if (e.key === "Escape") {
+        if (deleteScriptConfirm) { setDeleteScriptConfirm(null); }
+        else if (showAddScript) { setShowAddScript(false); }
+        else if (showShortcuts) { setShowShortcuts(false); }
+        else if (showResetConfirm) { setShowResetConfirm(false); }
+        else if (showEditor) { setShowEditor(false); }
+        else if (showSettings) { setShowSettings(false); }
+        else return;
+        e.preventDefault();
+        return;
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isListening, isPlaying, showHighlight]);
+  }, [isListening, isPlaying, showHighlight, showShortcuts]);
 
   // Recompute language menu position when opened
   useEffect(() => {
@@ -1634,7 +1730,7 @@ Happy recording!`);
             justifyContent: "flex-start",
           }}
         >
-          <IconButton
+          <IconButton uiOpacity={uiOpacity}
             onClick={toggleListening}
             ariaLabel="Microphone"
             tooltipTitle="Microphone (V)"
@@ -1670,7 +1766,7 @@ Happy recording!`);
 
           {/* Language selector toggle */}
           <span ref={languageBtnRef}>
-            <IconButton
+            <IconButton uiOpacity={uiOpacity}
               onClick={() => {
                 setShowLanguageSelector((v) => !v);
                 if (languageBtnRef.current) {
@@ -1715,7 +1811,7 @@ Happy recording!`);
           </span>
 
           {/* Mirror X */}
-          <IconButton
+          <IconButton uiOpacity={uiOpacity}
             onClick={() => setMirrorX((v) => !v)}
             ariaLabel="Mirror X"
             tooltipTitle="Mirror horizontally (M)"
@@ -1812,7 +1908,7 @@ Happy recording!`);
 
           {/* Editor button will be placed right before Settings */}
 
-          <IconButton
+          <IconButton uiOpacity={uiOpacity}
             onClick={toggleAutoPlay}
             ariaLabel="Auto Scroll"
             tooltipTitle="Auto Scroll (P)"
@@ -1825,7 +1921,7 @@ Happy recording!`);
           {/* Follow Mode button removed per request */}
 
           {/* Toggle highlight button */}
-          <IconButton
+          <IconButton uiOpacity={uiOpacity}
             onClick={() => setShowHighlight((v) => !v)}
             ariaLabel="Toggle highlight"
             tooltipTitle="Word highlight (H)"
@@ -1867,7 +1963,7 @@ Happy recording!`);
             )}
           </IconButton>
 
-          <IconButton
+          <IconButton uiOpacity={uiOpacity}
             onClick={resetPosition}
             ariaLabel="Reset"
             tooltipTitle="Reset (R)"
@@ -1877,7 +1973,7 @@ Happy recording!`);
             <Icon name={"arrow-path"} />
           </IconButton>
 
-          <IconButton
+          <IconButton uiOpacity={uiOpacity}
             onClick={() => setShowEditor(!showEditor)}
             ariaLabel="Script Editor"
             tooltipTitle="Script Editor (S)"
@@ -1887,7 +1983,7 @@ Happy recording!`);
             <Icon name={"pencil-square"} />
           </IconButton>
 
-          <IconButton
+          <IconButton uiOpacity={uiOpacity}
             onClick={() => setShowSettings(!showSettings)}
             ariaLabel="Settings"
             tooltipTitle="Settings (E)"
@@ -1897,7 +1993,7 @@ Happy recording!`);
             <Icon name={"adjustments-horizontal"} />
           </IconButton>
 
-          <IconButton
+          <IconButton uiOpacity={uiOpacity}
             onClick={toggleFullscreen}
             ariaLabel="Fullscreen"
             tooltipTitle="Fullscreen (F)"
@@ -1909,7 +2005,35 @@ Happy recording!`);
             />
           </IconButton>
 
-          <IconButton
+          <IconButton uiOpacity={uiOpacity}
+            onClick={() => setShowShortcuts((v) => !v)}
+            ariaLabel="Keyboard Shortcuts"
+            tooltipTitle="Keyboard Shortcuts (?)"
+            tooltipDesc="Show all keyboard shortcuts"
+            style={{ background: showShortcuts ? "#1565c0" : "#0f0f0f" }}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="white"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="2" y="4" width="20" height="16" rx="2" ry="2" />
+              <path d="M6 8h.001" />
+              <path d="M10 8h.001" />
+              <path d="M14 8h.001" />
+              <path d="M18 8h.001" />
+              <path d="M6 12h.001" />
+              <path d="M18 12h.001" />
+              <path d="M8 16h8" />
+            </svg>
+          </IconButton>
+
+          <IconButton uiOpacity={uiOpacity}
             onClick={() =>
               window.open("https://buymeacoffee.com/nrjsoeq61", "_blank")
             }
@@ -1936,7 +2060,7 @@ Happy recording!`);
             </svg>
           </IconButton>
 
-          <IconButton
+          <IconButton uiOpacity={uiOpacity}
             onClick={() => (window.location.href = "./index.html")}
             ariaLabel="Back to Homepage"
             tooltipTitle="Back to Homepage"
@@ -2007,7 +2131,7 @@ Happy recording!`);
                 onChange={(e) => setText(e.target.value)}
                 style={{
                   width: "94%",
-                  minHeight: "50vh",
+                  minHeight: showScriptList ? "25vh" : "50vh",
                   padding: "10px",
                   borderRadius: "6px",
                   border: "1px solid #555",
@@ -2015,6 +2139,7 @@ Happy recording!`);
                   color: "white",
                   fontSize: "14px",
                   fontFamily: "inherit",
+                  transition: "min-height 0.2s ease",
                 }}
               />
               <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
@@ -2035,7 +2160,7 @@ Happy recording!`);
                     fontWeight: "bold",
                   }}
                 >
-                  📋 Copy All Text
+                  📋 Copy
                 </button>
                 <button
                   onClick={() => {
@@ -2055,15 +2180,160 @@ Happy recording!`);
                     fontWeight: "bold",
                   }}
                 >
-                  🗑️ Clear All
+                  🗑️ Clear
                 </button>
+              </div>
+
+              {/* My Scripts section */}
+              <div style={{ marginTop: "14px" }}>
+                <button
+                  onClick={() => setShowScriptList((v) => !v)}
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "10px 14px",
+                    borderRadius: "8px",
+                    border: "1px solid #444",
+                    background: showScriptList ? "#1a1a1a" : "#0f0f0f",
+                    color: "white",
+                    cursor: "pointer",
+                    fontSize: "13px",
+                    fontWeight: "bold",
+                  }}
+                >
+                  <span>📚 My Scripts ({savedScripts.length}/{MAX_SCRIPTS})</span>
+                  <span style={{ fontSize: "10px", color: "#888" }}>
+                    {showScriptList ? "▲" : "▼"}
+                  </span>
+                </button>
+
+                {showScriptList && (
+                  <div style={{ marginTop: "10px" }}>
+                    <button
+                      onClick={openAddScriptModal}
+                      disabled={savedScripts.length >= MAX_SCRIPTS}
+                      style={{
+                        width: "100%",
+                        padding: "10px 14px",
+                        borderRadius: "8px",
+                        border: "1px dashed #555",
+                        background: "transparent",
+                        color: savedScripts.length >= MAX_SCRIPTS ? "#555" : "#4fc3f7",
+                        cursor: savedScripts.length >= MAX_SCRIPTS ? "default" : "pointer",
+                        fontSize: "13px",
+                        fontWeight: "bold",
+                        marginBottom: "10px",
+                      }}
+                    >
+                      + Add Script
+                    </button>
+
+                    {savedScripts.length === 0 ? (
+                      <div
+                        style={{
+                          color: "#666",
+                          fontSize: "13px",
+                          textAlign: "center",
+                          padding: "20px 12px",
+                          background: "#1a1a1a",
+                          borderRadius: "8px",
+                        }}
+                      >
+                        No saved scripts yet.
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                        {savedScripts.map((script) => (
+                          <div
+                            key={script.id}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                              background: "#1a1a1a",
+                              borderRadius: "6px",
+                              padding: "8px 10px",
+                            }}
+                          >
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div
+                                style={{
+                                  color: "white",
+                                  fontSize: "13px",
+                                  fontWeight: "bold",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {script.name}
+                              </div>
+                              <div style={{ color: "#666", fontSize: "10px", marginTop: "1px" }}>
+                                {(languagesList.find((l) => l.code === script.language) || {}).label || script.language || "—"}
+                                {" · "}
+                                {script.text.split(/\s+/).filter(Boolean).length} words
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => loadScript(script)}
+                              style={{
+                                padding: "5px 12px",
+                                borderRadius: "5px",
+                                border: "none",
+                                background: "#1565c0",
+                                color: "white",
+                                cursor: "pointer",
+                                fontSize: "12px",
+                                fontWeight: "bold",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              Load
+                            </button>
+                            <button
+                              onClick={() => openEditScriptModal(script)}
+                              style={{
+                                padding: "5px 10px",
+                                borderRadius: "5px",
+                                border: "1px solid #555",
+                                background: "transparent",
+                                color: "#aaa",
+                                cursor: "pointer",
+                                fontSize: "12px",
+                              }}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => setDeleteScriptConfirm(script)}
+                              style={{
+                                padding: "5px 8px",
+                                borderRadius: "5px",
+                                border: "1px solid #b71c1c",
+                                background: "transparent",
+                                color: "#ef5350",
+                                cursor: "pointer",
+                                fontSize: "12px",
+                                fontWeight: "bold",
+                              }}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               <div style={{ height: 8 }} />
             </div>
           ) : (
             <>
               <button
-                onClick={resetSettingsToDefault}
+                onClick={() => setShowResetConfirm(true)}
                 style={{
                   width: "100%",
                   marginBottom: "12px",
@@ -2897,7 +3167,7 @@ Happy recording!`);
                     cursor: "pointer",
                     marginBottom: "10px",
                   }}
-                  title="Open File — Import .txt/.md/.pdf"
+                  title="Open File — Import .txt/.md"
                   aria-label="Toggle Aim Indicator"
                 >
                   {showAim ? "Disable" : "Enable"}
@@ -3443,90 +3713,517 @@ Happy recording!`);
         </div>
       )}
 
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.7; }
-        }
-        
-        /* Custom scrollbar for toolbar */
-        div[style*="overflowX: auto"]::-webkit-scrollbar {
-          height: 6px;
-        }
-        
-        div[style*="overflowX: auto"]::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        
-        div[style*="overflowX: auto"]::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.3);
-          border-radius: 3px;
-        }
-        
-        div[style*="overflowX: auto"]::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.5);
-        }
-        
-        /* Custom Slider Component */
-        .custom-slider {
-          position: relative;
-          width: 100%;
-          height: 20px;
-          background: #333;
-          border-radius: 10px;
-          cursor: pointer;
-        }
-        
-        .custom-slider-track {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 20px;
-          background: #333;
-          border-radius: 10px;
-        }
-        
-        .custom-slider-thumb {
-          position: absolute;
-          top: 0px;
-          width: 16px;
-          height: 16px;
-          background: #fff;
-          border-radius: 50%;
-          cursor: grab;
-          border: 2px solid #333;
-          transition: all 0.1s ease;
-        }
-        
-        .custom-slider-thumb:active {
-          cursor: grabbing;
-        }
-        
-        .custom-slider-thumb:hover {
-          background: #f0f0f0;
-          transform: scale(1.1);
-        }
-        
-        .custom-slider-thumb:active {
-          background: #e0e0e0;
-          transform: scale(1.2);
-        }
-        
-        /* Responsive toolbar alignment */
-        .toolbar-buttons {
-          justify-content: flex-start;
-        }
-        
-        @media (min-width: 768px) {
-          .toolbar-buttons {
-            justify-content: center !important;
-          }
-        }
-      `}</style>
+      {/* Delete Script Confirmation Modal */}
+      {deleteScriptConfirm && (
+        <div
+          onClick={() => setDeleteScriptConfirm(null)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.8)",
+            zIndex: 21000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#111",
+              border: "2px solid rgba(255,255,255,0.15)",
+              borderRadius: "16px",
+              padding: "32px",
+              maxWidth: "400px",
+              width: "calc(100vw - 40px)",
+              boxShadow: "0 16px 48px rgba(0,0,0,0.6)",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: "40px", marginBottom: "16px" }}>🗑️</div>
+            <h2
+              style={{
+                color: "white",
+                margin: "0 0 12px",
+                fontSize: "20px",
+              }}
+            >
+              Delete Script?
+            </h2>
+            <p
+              style={{
+                color: "#aaa",
+                fontSize: "14px",
+                lineHeight: "1.5",
+                margin: "0 0 8px",
+              }}
+            >
+              Are you sure you want to delete
+            </p>
+            <p
+              style={{
+                color: "white",
+                fontSize: "15px",
+                fontWeight: "bold",
+                margin: "0 0 24px",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              "{deleteScriptConfirm.name}"
+            </p>
+            <div
+              style={{ display: "flex", gap: "12px", justifyContent: "center" }}
+            >
+              <button
+                onClick={() => setDeleteScriptConfirm(null)}
+                style={{
+                  padding: "10px 24px",
+                  borderRadius: "8px",
+                  border: "1px solid #555",
+                  background: "#333",
+                  color: "white",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  fontSize: "14px",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteScript}
+                style={{
+                  padding: "10px 24px",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: "#b71c1c",
+                  color: "white",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  fontSize: "14px",
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add / Edit Script Modal */}
+      {showAddScript && (
+        <div
+          onClick={() => setShowAddScript(false)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.85)",
+            zIndex: 20000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#111",
+              border: "2px solid rgba(255,255,255,0.15)",
+              borderRadius: "16px",
+              padding: "28px",
+              maxWidth: "540px",
+              width: "calc(100vw - 40px)",
+              maxHeight: "85vh",
+              display: "flex",
+              flexDirection: "column",
+              boxShadow: "0 16px 48px rgba(0,0,0,0.6)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "16px",
+              }}
+            >
+              <h2 style={{ color: "white", margin: 0, fontSize: "18px" }}>
+                {editScriptId ? "Edit Script" : "Add Script"}
+              </h2>
+              <button
+                onClick={() => setShowAddScript(false)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#999",
+                  fontSize: "24px",
+                  cursor: "pointer",
+                  padding: "4px 8px",
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <label
+              style={{
+                color: "#aaa",
+                fontSize: "12px",
+                marginBottom: "4px",
+              }}
+            >
+              Script name
+            </label>
+            <input
+              type="text"
+              value={addScriptName}
+              onChange={(e) => setAddScriptName(e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
+              placeholder="e.g. Episode 1 intro..."
+              style={{
+                padding: "10px 14px",
+                borderRadius: "8px",
+                border: `1px solid ${scriptFormTouched && !addScriptName.trim() ? "#b71c1c" : "#444"}`,
+                background: "#1a1a1a",
+                color: "white",
+                fontSize: "14px",
+                outline: "none",
+                marginBottom: scriptFormTouched && !addScriptName.trim() ? "4px" : "12px",
+              }}
+            />
+            {scriptFormTouched && !addScriptName.trim() && (
+              <div style={{ color: "#ef5350", fontSize: "12px", marginBottom: "8px" }}>
+                Please enter a script name.
+              </div>
+            )}
+
+            <label
+              style={{
+                color: "#aaa",
+                fontSize: "12px",
+                marginBottom: "4px",
+              }}
+            >
+              Language
+            </label>
+            <select
+              value={addScriptLanguage}
+              onChange={(e) => setAddScriptLanguage(e.target.value)}
+              style={{
+                padding: "10px 14px",
+                borderRadius: "8px",
+                border: "1px solid #444",
+                background: "#1a1a1a",
+                color: "white",
+                fontSize: "14px",
+                outline: "none",
+                marginBottom: "12px",
+                cursor: "pointer",
+              }}
+            >
+              {languagesList.map((lng) => (
+                <option key={lng.code} value={lng.code}>
+                  {lng.label}
+                </option>
+              ))}
+            </select>
+
+            <label
+              style={{
+                color: "#aaa",
+                fontSize: "12px",
+                marginBottom: "4px",
+              }}
+            >
+              Script text
+            </label>
+            <textarea
+              value={addScriptText}
+              onChange={(e) => setAddScriptText(e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
+              placeholder="Paste or type your script here..."
+              style={{
+                flex: 1,
+                minHeight: "200px",
+                padding: "12px 14px",
+                borderRadius: "8px",
+                border: `1px solid ${scriptFormTouched && !addScriptText.trim() ? "#b71c1c" : "#444"}`,
+                background: "#1a1a1a",
+                color: "white",
+                fontSize: "14px",
+                fontFamily: "inherit",
+                outline: "none",
+                resize: "vertical",
+                marginBottom: scriptFormTouched && !addScriptText.trim() ? "4px" : "16px",
+              }}
+            />
+            {scriptFormTouched && !addScriptText.trim() && (
+              <div style={{ color: "#ef5350", fontSize: "12px", marginBottom: "12px" }}>
+                Please enter the script text.
+              </div>
+            )}
+
+            <div
+              style={{
+                display: "flex",
+                gap: "10px",
+                justifyContent: "flex-end",
+              }}
+            >
+              <button
+                onClick={() => setShowAddScript(false)}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: "8px",
+                  border: "1px solid #555",
+                  background: "#333",
+                  color: "white",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  fontSize: "13px",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => saveScript(false)}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: "#2e7d32",
+                  color: "white",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  fontSize: "13px",
+                }}
+              >
+                Save
+              </button>
+              <button
+                onClick={() => saveScript(true)}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: "#1565c0",
+                  color: "white",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  fontSize: "13px",
+                }}
+              >
+                Save & Load
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Confirmation Modal */}
+      {showResetConfirm && (
+        <div
+          onClick={() => setShowResetConfirm(false)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.8)",
+            zIndex: 20000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#111",
+              border: "2px solid rgba(255,255,255,0.15)",
+              borderRadius: "16px",
+              padding: "32px",
+              maxWidth: "400px",
+              width: "calc(100vw - 40px)",
+              boxShadow: "0 16px 48px rgba(0,0,0,0.6)",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: "40px", marginBottom: "16px" }}>⚠️</div>
+            <h2
+              style={{
+                color: "white",
+                margin: "0 0 12px",
+                fontSize: "20px",
+              }}
+            >
+              Reset All Settings?
+            </h2>
+            <p
+              style={{
+                color: "#aaa",
+                fontSize: "14px",
+                lineHeight: "1.5",
+                margin: "0 0 24px",
+              }}
+            >
+              This will restore all settings to their defaults: font size,
+              colors, speed, language, and layout. Your script text will not be
+              affected.
+            </p>
+            <div
+              style={{ display: "flex", gap: "12px", justifyContent: "center" }}
+            >
+              <button
+                onClick={() => setShowResetConfirm(false)}
+                style={{
+                  padding: "10px 24px",
+                  borderRadius: "8px",
+                  border: "1px solid #555",
+                  background: "#333",
+                  color: "white",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  fontSize: "14px",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  resetSettingsToDefault();
+                  setShowResetConfirm(false);
+                }}
+                style={{
+                  padding: "10px 24px",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: "#b71c1c",
+                  color: "white",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  fontSize: "14px",
+                }}
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Keyboard Shortcuts Modal */}
+      {showShortcuts && (
+        <div
+          onClick={() => setShowShortcuts(false)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.8)",
+            zIndex: 20000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#111",
+              border: "2px solid rgba(255,255,255,0.15)",
+              borderRadius: "16px",
+              padding: "32px",
+              maxWidth: "480px",
+              width: "calc(100vw - 40px)",
+              maxHeight: "80vh",
+              overflowY: "auto",
+              boxShadow: "0 16px 48px rgba(0,0,0,0.6)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "20px",
+              }}
+            >
+              <h2 style={{ color: "white", margin: 0, fontSize: "20px" }}>
+                ⌨️ Keyboard Shortcuts
+              </h2>
+              <button
+                onClick={() => setShowShortcuts(false)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#999",
+                  fontSize: "24px",
+                  cursor: "pointer",
+                  padding: "4px 8px",
+                }}
+              >
+                ×
+              </button>
+            </div>
+            {[
+              ["V", "Start / Stop microphone"],
+              ["P", "Play / Pause auto-scroll"],
+              ["H", "Toggle word highlighting"],
+              ["R", "Reset to beginning"],
+              ["L", "Language selection"],
+              ["E", "Settings menu"],
+              ["S", "Script editor"],
+              ["B", "My Scripts (in editor)"],
+              ["F", "Fullscreen mode"],
+              ["M", "Mirror text horizontally"],
+              ["?", "Show this panel"],
+            ].map(([key, desc]) => (
+              <div
+                key={key}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "10px 12px",
+                  background: "#1a1a1a",
+                  borderRadius: "8px",
+                  marginBottom: "6px",
+                }}
+              >
+                <span style={{ color: "#ccc", fontSize: "14px" }}>{desc}</span>
+                <kbd
+                  style={{
+                    background: "#333",
+                    color: "white",
+                    padding: "4px 12px",
+                    borderRadius: "6px",
+                    fontSize: "14px",
+                    fontFamily: "monospace",
+                    fontWeight: "bold",
+                    border: "1px solid #555",
+                    minWidth: "28px",
+                    textAlign: "center",
+                  }}
+                >
+                  {key}
+                </kbd>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
-
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(<SmartTeleprompter />);

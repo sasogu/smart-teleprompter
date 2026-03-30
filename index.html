@@ -3,60 +3,68 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Smart Teleprompter – Free Voice Activated Teleprompter with Real-Time Voice Tracking</title>
+    <title>Smart Teleprompter – Free Voice Activated Teleprompter | Real-Time Voice Tracking, 20+ Languages</title>
     <meta
       name="description"
-      content="Free, open-source voice activated teleprompter that follows your voice in real-time. Works with Elgato Prompter. No subscription, no data collection. 20+ languages. Try it free in Chrome."
+      content="Free voice activated teleprompter that follows your voice in real-time. Smart prompter with 20+ languages including Japanese, Spanish, and Greek. No subscription, no data collection. Works on Chrome, Android, and desktop. Open-source Elgato Prompter alternative."
+    />
+    <meta
+      name="keywords"
+      content="smart teleprompter, voice activated teleprompter, free teleprompter, voice teleprompter, smart prompter, teleprompter voice activated, teleprompter app, speech recognition teleprompter, online teleprompter, free voice activated teleprompter"
     />
 
     <!-- Favicons -->
     <link
       rel="icon"
       type="image/png"
-      href="./favicon-96x96.png"
+      href="/favicon-96x96.png"
       sizes="96x96"
     />
-    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-    <link rel="shortcut icon" href="./favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon.ico" />
     <link
       rel="apple-touch-icon"
       sizes="180x180"
-      href="./apple-touch-icon.png"
+      href="/apple-touch-icon.png"
     />
     <meta name="apple-mobile-web-app-title" content="Smart Teleprompter" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#000000" />
+    <link rel="canonical" href="https://smarttelepromter.com/" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://smartteleprompter.com/" />
+    <meta property="og:url" content="https://smarttelepromter.com/" />
     <meta
       property="og:title"
-      content="Smart Teleprompter - Free Voice-Controlled Teleprompter"
+      content="Smart Teleprompter – Free Voice Activated Teleprompter"
     />
     <meta
       property="og:description"
-      content="Free, open-source teleprompter with real-time speech recognition. Perfect for content creators, presenters, and professionals."
+      content="Free voice activated teleprompter with real-time voice tracking. 20+ languages, script library, auto-scroll. No subscription, runs in your browser. Open-source Elgato Prompter alternative."
     />
     <meta
       property="og:image"
-      content="https://raw.githubusercontent.com/Voumellis/smart-telepromter/main/smartTeleprompter.jpg"
+      content="https://raw.githubusercontent.com/Voumellis/smart-teleprompter/main/smartTeleprompter.jpg"
     />
+    <meta property="og:site_name" content="Smart Teleprompter" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@Voumellis" />
     <meta name="twitter:creator" content="@Voumellis" />
-    <meta name="twitter:url" content="https://smartteleprompter.com/" />
+    <meta name="twitter:url" content="https://smarttelepromter.com/" />
     <meta
       name="twitter:title"
-      content="Smart Teleprompter - Free Voice-Controlled Teleprompter"
+      content="Smart Teleprompter – Free Voice Activated Teleprompter"
     />
     <meta
       name="twitter:description"
-      content="Free, open-source teleprompter with real-time speech recognition. Perfect for content creators, presenters, and professionals."
+      content="Free voice activated teleprompter with real-time voice tracking. 20+ languages, script library, auto-scroll. No subscription, runs in your browser. Open-source Elgato Prompter alternative."
     />
     <meta
       name="twitter:image"
-      content="https://raw.githubusercontent.com/Voumellis/smart-telepromter/main/smartTeleprompter.jpg"
+      content="https://raw.githubusercontent.com/Voumellis/smart-teleprompter/main/smartTeleprompter.jpg"
     />
     <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-0WB94SE96L"></script>
@@ -66,41 +74,34 @@
       gtag('js', new Date());
       gtag('config', 'G-0WB94SE96L');
     </script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      @keyframes float {
-        100% {
-          transform: translateX(0px);
-          scale: 1;
-          opacity: 0.6;
-        }
-        50% {
-          transform: translateX(20px);
-          scale: 1.1;
-          opacity: 1;
-        }
-        0% {
-          transform: translateX(0px);
-          scale: 1;
-          opacity: 0.6;
-        }
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Smart Teleprompter",
+      "url": "https://smarttelepromter.com/",
+      "applicationCategory": "MultimediaApplication",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "description": "Free, open-source voice activated teleprompter with real-time speech tracking. Supports 20+ languages with script library, auto-scroll, and full customization.",
+      "screenshot": "https://raw.githubusercontent.com/Voumellis/smart-teleprompter/main/smartTeleprompter.jpg",
+      "featureList": "Voice activated scrolling, 20+ languages, Script library, Auto-scroll, Customizable fonts and colors, Mirror mode, Fullscreen, Keyboard shortcuts",
+      "softwareVersion": "1.0.0",
+      "author": {
+        "@type": "Person",
+        "name": "Voumellis",
+        "url": "https://github.com/Voumellis"
       }
-      .float-animation {
-        animation: float 3s ease-in-out infinite;
-      }
-      @keyframes pulse-glow {
-        0%,
-        100% {
-          box-shadow: 0 0 20px rgba(255, 235, 59, 0.3);
-        }
-        50% {
-          box-shadow: 0 0 40px rgba(255, 235, 59, 0.6);
-        }
-      }
-      .pulse-glow {
-        animation: pulse-glow 2s ease-in-out infinite;
-      }
-    </style>
+    }
+    </script>
+
+    <script type="module" src="/src/landing.js"></script>
   </head>
   <body class="bg-black text-white">
     <!-- Hero Section -->
@@ -110,7 +111,7 @@
         <div class="max-w-7xl mx-auto flex justify-between items-center">
           <div class="flex items-center gap-3">
             <img
-              src="./logo.svg"
+              src="/logo.svg"
               alt="Smart Teleprompter"
               class="w-10 h-10"
               onerror="this.style.display='none'"
@@ -156,23 +157,23 @@
           </h1>
 
           <p class="text-xl md:text-2xl text-gray-300 mb-4">
-            Your voice-controlled reading companion
+            Free Voice Activated Teleprompter
           </p>
 
           <p class="text-lg md:text-xl text-gray-400 mb-12 max-w-3xl mx-auto">
-            Free, open-source teleprompter that follows your voice in real-time.
-            Perfect for content creators, presenters, and professionals.
+            Open-source smart prompter that follows your voice in real-time.
+            20+ languages, script library, and full customization. No subscription needed.
           </p>
 
           <div class="flex flex-col sm:flex-row gap-4 justify-center mb-16">
             <a
-              href="./app.html"
+              href="/app.html"
               class="pulse-glow px-8 py-4 bg-yellow-500 hover:bg-yellow-600 text-black text-lg font-bold rounded-lg transition-all transform hover:scale-105"
             >
               🚀 Launch App
             </a>
             <a
-              href="https://github.com/Voumellis/smart-telepromter"
+              href="https://github.com/Voumellis/smart-teleprompter"
               target="_blank"
               rel="noopener"
               class="px-8 py-4 bg-neutral-900/50 hover:bg-neutral-700 text-white text-lg font-semibold rounded-lg border border-gray-600 transition-all"
@@ -182,7 +183,7 @@
           </div>
 
           <!-- Features Grid -->
-          <div class="grid md:grid-cols-3 gap-8 mt-20">
+          <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mt-20">
             <div
               class="bg-neutral-900/50 p-8 rounded-xl border border-gray-800 hover:border-yellow-500 transition-colors"
             >
@@ -200,6 +201,16 @@
               <h2 class="text-xl font-bold mb-3">Fully Customizable</h2>
               <p class="text-gray-400">
                 Adjust fonts, colors, speed, and spacing to your needs
+              </p>
+            </div>
+
+            <div
+              class="bg-neutral-900/50 p-8 rounded-xl border border-gray-800 hover:border-yellow-500 transition-colors"
+            >
+              <div class="text-4xl mb-4">📚</div>
+              <h2 class="text-xl font-bold mb-3">Script Library</h2>
+              <p class="text-gray-400">
+                Save, edit, and load up to 50 scripts with per-script language
               </p>
             </div>
 
@@ -268,8 +279,20 @@
               <div
                 class="flex justify-between items-center p-3 bg-black rounded-lg"
               >
+                <span class="font-semibold">My Scripts</span>
+                <kbd class="px-2 py-1 bg-gray-700 rounded text-xs">B</kbd>
+              </div>
+              <div
+                class="flex justify-between items-center p-3 bg-black rounded-lg"
+              >
                 <span class="font-semibold">Fullscreen</span>
                 <kbd class="px-2 py-1 bg-gray-700 rounded text-xs">F</kbd>
+              </div>
+              <div
+                class="flex justify-between items-center p-3 bg-black rounded-lg"
+              >
+                <span class="font-semibold">Keyboard Shortcuts</span>
+                <kbd class="px-2 py-1 bg-gray-700 rounded text-xs">?</kbd>
               </div>
             </div>
           </div>
@@ -458,14 +481,14 @@
               >Support Development</a
             >
             <a
-              href="https://github.com/Voumellis/smart-telepromter"
+              href="https://github.com/Voumellis/smart-teleprompter"
               target="_blank"
               rel="noopener"
               class="hover:text-yellow-400 transition-colors"
               >GitHub</a
             >
             <a
-              href="https://github.com/savvas/smart-teleprompter/issues"
+              href="https://github.com/Voumellis/smart-teleprompter/issues"
               target="_blank"
               rel="noopener"
               class="hover:text-yellow-400 transition-colors"
@@ -473,7 +496,7 @@
             >
           </div>
           <p class="mt-4 text-xs">Open Source • MIT License • Free Forever</p>
-          <p class="mt-4 text-xs">Smart Teleprompter is a free voice activated teleprompter that uses real-time voice tracking to automatically scroll your script as you speak. Unlike paid alternatives, everything runs locally in your browser — no subscription, no data collection. Works great as an Elgato Prompter software replacement.</p>
+          <p class="mt-4 text-xs">Smart Teleprompter is a free voice activated teleprompter that uses real-time voice tracking to automatically scroll your script as you speak. Supports 20+ languages including Japanese, Spanish, Greek, and more. Save and manage scripts with the built-in script library. Unlike paid alternatives, this smart prompter runs entirely in your browser — no subscription, no data collection. Works on Chrome, Edge, and Android. A great free Elgato Prompter software replacement.</p>
         </div>
       </footer>
     </div>

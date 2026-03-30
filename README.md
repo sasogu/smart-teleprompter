@@ -2,10 +2,13 @@
 
 A free, open-source teleprompter application that uses real-time speech recognition to automatically follow your voice as you read. Perfect for content creators, presenters, and anyone who needs a professional teleprompter solution.
 
-![Smart Teleprompter](https://img.shields.io/badge/Version-1.0.0-blue.svg)
+**🌐 Live at [smarttelepromter.com](https://smarttelepromter.com)**
+
+![Version](https://img.shields.io/badge/Version-1.0.0-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
-![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-yellow.svg)
-![React](https://img.shields.io/badge/React-Hooks-blue.svg)
+![React](https://img.shields.io/badge/React-19-blue.svg)
+![Vite](https://img.shields.io/badge/Vite-6-purple.svg)
+![Tailwind](https://img.shields.io/badge/Tailwind-4-38bdf8.svg)
 
 ## ✨ Features
 
@@ -32,8 +35,11 @@ A free, open-source teleprompter application that uses real-time speech recognit
 - **Fullscreen mode** for presentations
 - **Keyboard shortcuts** for quick access
 - **Script editor** with copy/clear functions
+- **Script library** — save, name, edit, and load up to 50 scripts with per-script language
+- **File import** from .txt and .md files
 - **Settings persistence** with localStorage
 - **Smooth animations** and transitions
+- **Privacy first** — all data stays on your device
 
 ### 🌍 Multi-Language Support
 
@@ -60,44 +66,53 @@ A free, open-source teleprompter application that uses real-time speech recognit
 
 ## 🚀 Quick Start
 
-### Option 1: Direct Use
+### Use Online
 
-1. Download or clone this repository
-2. Open `index.html` in your web browser (landing page)
-3. Click "🚀 Launch App" to open the teleprompter
-4. Allow microphone access when prompted
-5. Start speaking to see the magic happen!
+Visit **[smarttelepromter.com](https://smarttelepromter.com)** and click "🚀 Launch App".
 
-### Option 2: Local Server
+### Run Locally
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/smart-teleprompter.git
+git clone https://github.com/Voumellis/smart-teleprompter.git
 cd smart-teleprompter
 
-# Serve with Python (if installed)
-python -m http.server 8000
-
-# Or with Node.js (if installed)
-npx serve .
-
-# Open http://localhost:8000 in your browser (landing page)
-# Click "🚀 Launch App" to access the teleprompter
+# Install and run
+nvm use           # uses Node 22 from .nvmrc
+npm install
+npm run dev       # http://localhost:5173
 ```
+
+### 📦 Build for Production
+
+```bash
+npm run build     # outputs to dist/
+npm run preview   # preview the production build
+```
+
+## 🛠️ Tech Stack
+
+- **React 19** — UI framework
+- **Vite 6** — Build tool and dev server
+- **Tailwind CSS 4** — Utility-first styling (landing page)
+- **Vitest** — Unit testing
+- **Web Speech API** — Browser-native voice recognition
 
 ## ⌨️ Keyboard Shortcuts
 
 | Key | Action                   |
-| --- | ------------------------ |
+|-----|--------------------------|
 | `V` | Start/Stop microphone    |
 | `P` | Play/Pause auto-scroll   |
 | `H` | Toggle word highlighting |
 | `R` | Reset to beginning       |
-| `L` | Language selection       |
+| `L` | Language selection        |
 | `E` | Settings menu            |
 | `S` | Script editor            |
+| `B` | My Scripts (in editor)   |
 | `F` | Fullscreen mode          |
 | `M` | Mirror text horizontally |
+| `?` | Keyboard shortcuts panel |
 
 ## 🎯 How It Works
 
@@ -127,9 +142,9 @@ npx serve .
 - 📱 **Android**: Voice recognition may work but performance varies
 - 🌐 **Mobile Browsers**: Limited Web Speech API support
 
-### Browser Compatibility
+**Browser Compatibility:**
 
-- ✅ **Chrome/Chromium** (recommended - best performance)
+- ✅ **Chrome/Chromium** (recommended — best performance)
 - ✅ **Edge** (good performance)
 - ⚠️ **Safari** (limited functionality, no voice recognition on iOS)
 - ❌ **Firefox** (no Web Speech API support)
@@ -155,27 +170,41 @@ npx serve .
 - **Center Padding**: Control how much space around the reading line
 - **Aim Indicator**: Show/hide the reading line indicator
 
-## 📱 Mobile Support
+## 🏗️ Project Structure
 
-The app is fully responsive and works on:
+```
+├── index.html            Landing page
+├── app.html              React app entry
+├── vite.config.js        Vite configuration
+├── src/
+│   ├── App.jsx           Main teleprompter component
+│   ├── main.jsx          React entry point
+│   ├── landing.js        Landing page entry
+│   └── styles/
+│       └── index.css     Tailwind + custom styles
+├── tests/                Vitest test suites
+├── public/               Static assets, manifest, favicons
+└── dist/                 Production build output
+```
 
-- 📱 **Mobile phones** (iOS/Android)
-- 📱 **Tablets** (iPad/Android tablets)
-- 💻 **Desktop computers**
+## 🚀 Deployment
 
-**Note**: iOS devices have limited speech recognition support. Auto-play mode works perfectly on all devices.
+The `dist/` output is ready for any static hosting. Includes:
+
+- `_headers` — Cloudflare Pages security headers + cache control
+- `_redirects` — Clean URL routing (`/app` → `/app.html`)
+- `manifest.json` — PWA manifest
+
+Deploy to Cloudflare Pages, Vercel, Netlify, or any static host.
 
 ## 🤝 Contributing
 
 We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
 
-### Development Setup
-
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+3. Make your changes and test
+4. Submit a pull request
 
 ### Areas for Contribution
 
@@ -187,7 +216,7 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
@@ -198,8 +227,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/yourusername/smart-teleprompter/issues)
-- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/yourusername/smart-teleprompter/discussions)
+- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/Voumellis/smart-teleprompter/issues)
+- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/Voumellis/smart-teleprompter/discussions)
 - ☕ **Support Development**: [Buy Me a Coffee](https://buymeacoffee.com/nrjsoeq61)
 
 ## 🔄 Changelog

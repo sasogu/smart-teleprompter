@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+/* Landing page animations */
+@keyframes float {
+  0% {
+    transform: translateX(0px);
+    scale: 1;
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateX(20px);
+    scale: 1.1;
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(0px);
+    scale: 1;
+    opacity: 0.6;
+  }
+}
+
+.float-animation {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(255, 235, 59, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(255, 235, 59, 0.6);
+  }
+}
+
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* App animations */
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Custom scrollbar for toolbar */
+div[style*="overflowX: auto"]::-webkit-scrollbar {
+  height: 6px;
+}
+
+div[style*="overflowX: auto"]::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+div[style*="overflowX: auto"]::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+div[style*="overflowX: auto"]::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Custom Slider Component */
+.custom-slider {
+  position: relative;
+  width: 100%;
+  height: 20px;
+  background: #333;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.custom-slider-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: #333;
+  border-radius: 10px;
+}
+
+.custom-slider-thumb {
+  position: absolute;
+  top: 0px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  cursor: grab;
+  border: 2px solid #333;
+  transition: all 0.1s ease;
+}
+
+.custom-slider-thumb:active {
+  cursor: grabbing;
+  background: #e0e0e0;
+  transform: scale(1.2);
+}
+
+.custom-slider-thumb:hover {
+  background: #f0f0f0;
+  transform: scale(1.1);
+}
+
+/* Responsive toolbar alignment */
+.toolbar-buttons {
+  justify-content: flex-start;
+}
+
+@media (min-width: 768px) {
+  .toolbar-buttons {
+    justify-content: center !important;
+  }
+}

@@ -1,18 +1,19 @@
 {
   "name": "smart-teleprompter",
   "version": "1.0.0",
+  "type": "module",
+  "private": true,
   "description": "A free, open-source teleprompter application that uses real-time speech recognition to automatically follow your voice as you read",
-  "main": "app.html",
   "scripts": {
-    "start": "npx serve .",
-    "dev": "npx serve . -l 3000",
-    "build": "echo 'No build process needed - static files'",
-    "test": "echo 'No tests specified'",
-    "lint": "echo 'No linter configured'"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Voumellis/smart-telepromter.git"
+    "url": "git+https://github.com/Voumellis/smart-teleprompter.git"
   },
   "keywords": [
     "teleprompter",
@@ -33,30 +34,17 @@
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Voumellis/smart-telepromter/issues"
+    "url": "https://github.com/Voumellis/smart-teleprompter/issues"
   },
-  "homepage": "https://github.com/Voumellis/smart-telepromter#readme",
+  "homepage": "https://github.com/Voumellis/smart-teleprompter#readme",
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=18.0.0"
   },
   "browserslist": [
     "> 1%",
     "last 2 versions",
-    "not dead",
-    "not ie 11"
+    "not dead"
   ],
-  "files": [
-    "index.html",
-    "app.html",
-    "app.js",
-    "README.md",
-    "LICENSE",
-    "CONTRIBUTING.md",
-    "CHANGELOG.md"
-  ],
-  "devDependencies": {
-    "serve": "^14.2.0"
-  },
   "funding": {
     "type": "individual",
     "url": "https://buymeacoffee.com/nrjsoeq61"
@@ -68,22 +56,18 @@
       "url": "https://github.com/Voumellis"
     }
   ],
-  "dependencies": {},
-  "peerDependencies": {},
-  "optionalDependencies": {},
-  "bundledDependencies": [],
-  "os": [
-    "darwin",
-    "linux",
-    "win32"
-  ],
-  "cpu": [
-    "x64",
-    "arm64"
-  ],
-  "preferGlobal": false,
-  "private": false,
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org/"
+  "dependencies": {
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.2.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@vitejs/plugin-react": "^4.7.0",
+    "happy-dom": "^20.8.9",
+    "tailwindcss": "^4.2.2",
+    "vite": "^6.4.1",
+    "vitest": "^4.1.2"
   }
 }

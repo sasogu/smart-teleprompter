@@ -6,7 +6,7 @@ Thank you for your interest in contributing to Smart Teleprompter! This document
 
 ### Reporting Issues
 
-- Use the [GitHub Issues](https://github.com/yourusername/smart-teleprompter/issues) page
+- Use the [GitHub Issues](https://github.com/Voumellis/smart-teleprompter/issues) page
 - Search existing issues before creating a new one
 - Provide clear, detailed descriptions
 - Include steps to reproduce bugs
@@ -14,7 +14,7 @@ Thank you for your interest in contributing to Smart Teleprompter! This document
 
 ### Suggesting Features
 
-- Use [GitHub Discussions](https://github.com/yourusername/smart-teleprompter/discussions) for feature requests
+- Use [GitHub Discussions](https://github.com/Voumellis/smart-teleprompter/discussions) for feature requests
 - Check existing discussions first
 - Provide use cases and examples
 - Consider implementation complexity
@@ -34,26 +34,24 @@ Thank you for your interest in contributing to Smart Teleprompter! This document
 
 ### Prerequisites
 
-- Modern web browser (Chrome recommended)
+- Node.js 18+ (use `nvm use` to auto-select from `.nvmrc`)
 - Git
-- Text editor or IDE
-- Local web server (optional but recommended)
+- Modern web browser (Chrome recommended)
 
 ### Local Development
 
 ```bash
 # Clone your fork
-git clone https://github.com/yourusername/smart-teleprompter.git
+git clone https://github.com/Voumellis/smart-teleprompter.git
 cd smart-teleprompter
 
-# Serve locally (choose one)
-python -m http.server 8000
-# or
-npx serve .
-# or
-php -S localhost:8000
+# Install dependencies
+npm install
 
-# Open http://localhost:8000
+# Start dev server
+npm run dev
+
+# Open http://localhost:5173
 ```
 
 ### Testing
@@ -230,8 +228,8 @@ Contributors will be recognized in:
 
 ## 📞 Getting Help
 
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/yourusername/smart-teleprompter/discussions)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/yourusername/smart-teleprompter/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/Voumellis/smart-teleprompter/discussions)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/Voumellis/smart-teleprompter/issues)
 - 📧 **Email**: [Your email] (for private matters)
 
 ## 📄 License
