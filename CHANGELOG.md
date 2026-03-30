@@ -49,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Existing script text in `tp_settings_v1` is automatically migrated to the script library on first load
 
-## [1.0.0] - 2025-01-15
+## [1.0.0] - 2025-10-05
 
 ### Added
 
@@ -73,4 +73,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Version History
 
 - **2.0.0** (2026-03-30): Vite migration, script library, SEO improvements
-- **1.0.0** (2025-01-15): Initial release with core functionality
+- **1.0.0** (2025-10-05): Initial release with core functionality
