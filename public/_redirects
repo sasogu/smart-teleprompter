@@ -1,1 +1,1 @@
-/app  /app.html  200
+# Cloudflare Pages handles /app -> /app.html automatically via pretty URLs
