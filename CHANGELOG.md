@@ -5,6 +5,18 @@ All notable changes to Smart Teleprompter will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2026-03-30
+
+### Fixed
+
+- 🔧 **Public Assets Deployed**: Fixed `.gitignore` excluding `public/` directory — favicons, robots.txt, sitemap.xml, manifest, `_headers`, and OG image were never being deployed
+- 🖼️ **Social Share Image**: Fixed `og:image` and `twitter:image` URLs pointing to non-existent GitHub raw path
+- ♿ **Accessibility**: Added `<main>` landmark to landing page and app
+- ♿ **Contrast**: Improved Edit button contrast in script library
+- 🔒 **Security Headers**: Added `Strict-Transport-Security`, `Cross-Origin-Opener-Policy`, and `Content-Security-Policy` headers
+- 🐛 **Broken HTML**: Fixed mismatched `<h2>...</p>` tag in landing page footer
+- 🔁 **Redirect Loop**: Removed `_redirects` rewrite rule that conflicted with Cloudflare Pages' built-in pretty URLs
+
 ## [2.0.0] - 2026-03-30
 
 ### Added
@@ -72,5 +84,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History
 
+- **2.0.1** (2026-03-30): Lighthouse fixes, deploy public assets, security headers
 - **2.0.0** (2026-03-30): Vite migration, script library, SEO improvements
 - **1.0.0** (2025-10-05): Initial release with core functionality
