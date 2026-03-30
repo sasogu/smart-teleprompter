@@ -1677,7 +1677,7 @@ Happy recording!`);
   };
 
   return (
-    <div
+    <main
       style={{
         width: "100vw",
         height: "100vh",
@@ -2297,9 +2297,9 @@ Happy recording!`);
                               style={{
                                 padding: "5px 10px",
                                 borderRadius: "5px",
-                                border: "1px solid #555",
+                                border: "1px solid #666",
                                 background: "transparent",
-                                color: "#aaa",
+                                color: "#ccc",
                                 cursor: "pointer",
                                 fontSize: "12px",
                               }}
@@ -4224,6 +4224,6 @@ Happy recording!`);
         </div>
       )}
 
-    </div>
+    </main>
   );
 }
