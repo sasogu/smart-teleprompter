@@ -94,8 +94,8 @@
       },
       "description": "Free, open-source voice activated teleprompter with real-time speech tracking. Supports 20+ languages with script library, auto-scroll, and full customization.",
       "screenshot": "https://smarttelepromter.com/smartTeleprompter.jpg",
-      "featureList": "Voice activated scrolling, 20+ languages, Script library, Auto-scroll, Customizable fonts and colors, Mirror mode, Fullscreen, Keyboard shortcuts",
-      "softwareVersion": "2.1.0",
+      "featureList": "Voice activated scrolling, 20+ languages, Script library, Share scripts via link, Offline support (installable PWA), Auto-scroll, Customizable fonts and colors, Mirror mode, Fullscreen, Keyboard shortcuts",
+      "softwareVersion": "2.2.0",
       "author": {
         "@type": "Person",
         "name": "Voumellis",
@@ -186,7 +186,7 @@
           </div>
 
           <!-- Features Grid -->
-          <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mt-20">
+          <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mt-20">
             <div
               class="bg-neutral-900/50 p-8 rounded-xl border border-gray-800 hover:border-yellow-500 transition-colors"
             >
@@ -214,6 +214,29 @@
               <h2 class="text-xl font-bold mb-3">Script Library</h2>
               <p class="text-gray-400">
                 Save, edit, and load up to 50 scripts with per-script language
+              </p>
+            </div>
+
+            <div
+              class="bg-neutral-900/50 p-8 rounded-xl border border-gray-800 hover:border-yellow-500 transition-colors"
+            >
+              <div class="text-4xl mb-4">🔗</div>
+              <h2 class="text-xl font-bold mb-3">Share via Link</h2>
+              <p class="text-gray-400">
+                Send any script to another device with a link — write on your
+                desktop, prompt from your tablet. No account needed; links
+                expire after 30 days
+              </p>
+            </div>
+
+            <div
+              class="bg-neutral-900/50 p-8 rounded-xl border border-gray-800 hover:border-yellow-500 transition-colors"
+            >
+              <div class="text-4xl mb-4">📴</div>
+              <h2 class="text-xl font-bold mb-3">Offline &amp; Installable</h2>
+              <p class="text-gray-400">
+                Install it as an app from your browser and keep prompting with
+                no internet — auto-scroll mode works fully offline
               </p>
             </div>
 
@@ -422,7 +445,8 @@
                 <h3 class="font-bold text-yellow-400 mb-3">⚙️ Technical:</h3>
                 <ul class="list-disc list-inside space-y-2 text-gray-300">
                   <li>
-                    Stable internet connection required (5+ Mbps recommended)
+                    Stable internet connection required for voice recognition
+                    (auto-scroll works offline)
                   </li>
                   <li>
                     HTTPS connection required for microphone access in
@@ -430,6 +454,10 @@
                   </li>
                   <li>Allow microphone access when prompted</li>
                   <li>For mobile: Use Auto-scroll mode (P key)</li>
+                  <li>
+                    Install as an app: click the install icon in Chrome's
+                    address bar for a standalone window
+                  </li>
                 </ul>
               </div>
             </div>

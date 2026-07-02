@@ -5,6 +5,18 @@ All notable changes to Smart Teleprompter will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-07-02
+
+### Added
+
+- 🎯 **Aim Marker Styles**: Choose crosshair, dot, or camera-frame marker in 5 colors (yellow, blue, red, green, white) — community request from r/elgato
+- 🔴 **Hideable "Listening" Indicator**: New setting hides the red pill during recording for a clean on-camera view — community request from r/elgato
+- 🏠 **Landing Page**: New feature cards for Share via Link and Offline/Installable, plus an install-as-app tip
+
+### Changed
+
+- ⚡ **Snappier Word Highlight**: Highlight transition reduced 0.2s → 0.1s after feedback that word marking felt sluggish
+
 ## [2.1.0] - 2026-07-02
 
 ### Added

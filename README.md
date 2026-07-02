@@ -4,7 +4,7 @@ A free, open-source teleprompter application that uses real-time speech recognit
 
 **🌐 Live at [smarttelepromter.com](https://smarttelepromter.com)**
 
-![Version](https://img.shields.io/badge/Version-2.1.0-blue.svg)
+![Version](https://img.shields.io/badge/Version-2.2.0-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 ![React](https://img.shields.io/badge/React-19-blue.svg)
 ![Vite](https://img.shields.io/badge/Vite-6-purple.svg)
@@ -28,6 +28,17 @@ A free, open-source teleprompter application that uses real-time speech recognit
 - **Text alignment** (left, center, right)
 - **Mirror mode** for camera setups
 - **Opacity controls** for text and UI elements
+- **Aim marker styles** — crosshair, dot, or camera-frame in 5 colors
+- **Hideable "Listening" indicator** for clean on-camera recording
+
+### 🔗 Sharing & Offline
+
+- **Share scripts via link** — send any saved script to another device with a
+  short link (no account; links auto-expire after 30 days). Powered by a
+  Cloudflare Pages Function + KV
+- **Installable PWA** — install from the browser for a standalone app window
+- **Offline support** — the app shell is cached by a service worker;
+  auto-scroll mode works with no internet at all
 
 ### 📱 User Experience
 
@@ -39,7 +50,8 @@ A free, open-source teleprompter application that uses real-time speech recognit
 - **File import** from .txt and .md files
 - **Settings persistence** with localStorage
 - **Smooth animations** and transitions
-- **Privacy first** — all data stays on your device
+- **Privacy first** — all data stays on your device (scripts leave it only
+  when you explicitly share them)
 
 ### 🌍 Multi-Language Support
 

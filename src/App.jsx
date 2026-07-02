@@ -84,7 +84,9 @@ const TeleprompterLine = memo(function TeleprompterLine({
                 isCurrent && showHighlight ? highlightColor : "transparent",
               color: isCurrent && showHighlight ? "#000" : textColor,
               borderRadius: "2px",
-              transition: "background-color 0.2s ease, color 0.2s ease",
+              // 0.1s (was 0.2s): user feedback said the word marking felt
+              // sluggish — most of that was this transition, not recognition
+              transition: "background-color 0.1s ease, color 0.1s ease",
               fontWeight: "normal",
               cursor: "pointer",
             }}
@@ -276,6 +278,12 @@ Happy recording!`);
   const [showHighlight, setShowHighlight] = useState(true);
   const [aimOffsetX, setAimOffsetX] = useState(0);
   const [aimOffsetY, setAimOffsetY] = useState(0);
+  // Aim marker style/color + hideable "Listening" pill — added after user
+  // feedback (Reddit r/elgato): the red pill can distract during recording,
+  // and users asked for marker variants (e.g. Elgato-style frame, blue color).
+  const [aimStyle, setAimStyle] = useState("crosshair"); // crosshair | dot | frame
+  const [aimColor, setAimColor] = useState("#ffeb3b");
+  const [showListeningIndicator, setShowListeningIndicator] = useState(true);
   const [textOpacity, setTextOpacity] = useState(0.8);
   const [aimOpacity, setAimOpacity] = useState(1);
   const [uiOpacity, setUiOpacity] = useState(0.9);
@@ -572,6 +580,9 @@ Happy recording!`);
     showAim: true,
     aimOffsetX: 0,
     aimOffsetY: 0,
+    aimStyle: "crosshair",
+    aimColor: "#ffeb3b",
+    showListeningIndicator: true,
     textOpacity: 0.8,
     aimOpacity: 1,
     uiOpacity: 0.9,
@@ -597,6 +608,9 @@ Happy recording!`);
     setShowAim(defaultSettings.showAim);
     setAimOffsetX(defaultSettings.aimOffsetX);
     setAimOffsetY(defaultSettings.aimOffsetY);
+    setAimStyle(defaultSettings.aimStyle);
+    setAimColor(defaultSettings.aimColor);
+    setShowListeningIndicator(defaultSettings.showListeningIndicator);
     setTextOpacity(defaultSettings.textOpacity);
     setAimOpacity(defaultSettings.aimOpacity);
     setUiOpacity(defaultSettings.uiOpacity);
@@ -833,6 +847,10 @@ Happy recording!`);
       if (s.showAim != null) setShowAim(s.showAim);
       if (s.aimOffsetX != null) setAimOffsetX(s.aimOffsetX);
       if (s.aimOffsetY != null) setAimOffsetY(s.aimOffsetY);
+      if (s.aimStyle) setAimStyle(s.aimStyle);
+      if (s.aimColor) setAimColor(s.aimColor);
+      if (s.showListeningIndicator != null)
+        setShowListeningIndicator(s.showListeningIndicator);
       if (s.textOpacity != null) setTextOpacity(s.textOpacity);
       if (s.aimOpacity != null) setAimOpacity(s.aimOpacity);
       if (s.uiOpacity != null) setUiOpacity(s.uiOpacity);
@@ -868,6 +886,9 @@ Happy recording!`);
         showAim,
         aimOffsetX,
         aimOffsetY,
+        aimStyle,
+        aimColor,
+        showListeningIndicator,
         textOpacity,
         aimOpacity,
         uiOpacity,
@@ -899,6 +920,9 @@ Happy recording!`);
     showAim,
     aimOffsetX,
     aimOffsetY,
+    aimStyle,
+    aimColor,
+    showListeningIndicator,
     textOpacity,
     aimOpacity,
     uiOpacity,
@@ -3579,11 +3603,92 @@ Happy recording!`);
                     cursor: "pointer",
                     marginBottom: "10px",
                   }}
-                  title="Open File — Import .txt/.md"
                   aria-label="Toggle Aim Indicator"
                 >
                   {showAim ? "Disable" : "Enable"}
                 </button>
+                <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
+                  <div style={{ flex: 1 }}>
+                    <label
+                      style={{
+                        color: "white",
+                        display: "block",
+                        marginBottom: "8px",
+                      }}
+                    >
+                      Marker style
+                    </label>
+                    <div style={{ display: "flex", gap: "6px" }}>
+                      {[
+                        ["crosshair", "Crosshair"],
+                        ["dot", "Dot"],
+                        ["frame", "Frame"],
+                      ].map(([value, label]) => (
+                        <button
+                          key={value}
+                          onClick={() => setAimStyle(value)}
+                          aria-label={`Marker style: ${label}`}
+                          aria-pressed={aimStyle === value}
+                          style={{
+                            flex: 1,
+                            padding: "8px 4px",
+                            borderRadius: "6px",
+                            border:
+                              aimStyle === value
+                                ? "1px solid #90caf9"
+                                : "1px solid #555",
+                            background:
+                              aimStyle === value ? "#1565c0" : "#37474f",
+                            color: "white",
+                            cursor: "pointer",
+                            fontSize: "12px",
+                          }}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label
+                      style={{
+                        color: "white",
+                        display: "block",
+                        marginBottom: "8px",
+                      }}
+                    >
+                      Marker color
+                    </label>
+                    <div style={{ display: "flex", gap: "6px" }}>
+                      {[
+                        ["#ffeb3b", "Yellow"],
+                        ["#2196f3", "Blue"],
+                        ["#f44336", "Red"],
+                        ["#4caf50", "Green"],
+                        ["#ffffff", "White"],
+                      ].map(([value, label]) => (
+                        <button
+                          key={value}
+                          onClick={() => setAimColor(value)}
+                          title={label}
+                          aria-label={`Marker color: ${label}`}
+                          aria-pressed={aimColor === value}
+                          style={{
+                            flex: 1,
+                            height: "34px",
+                            borderRadius: "6px",
+                            border:
+                              aimColor === value
+                                ? "2px solid white"
+                                : "1px solid #555",
+                            background: value,
+                            cursor: "pointer",
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
                 <div style={{ display: "flex", gap: "10px" }}>
                   <div style={{ flex: 1 }}>
                     <label
@@ -3765,6 +3870,37 @@ Happy recording!`);
                     marginBottom: "8px",
                   }}
                 >
+                  "Listening" indicator:{" "}
+                  {showListeningIndicator ? "Visible" : "Hidden"}
+                </label>
+                <button
+                  onClick={() =>
+                    setShowListeningIndicator(!showListeningIndicator)
+                  }
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid #555",
+                    background: showListeningIndicator ? "#2e7d32" : "#37474f",
+                    color: "white",
+                    cursor: "pointer",
+                  }}
+                  aria-label="Toggle Listening Indicator"
+                  title="Hide the red 'Listening...' pill while recording — the mic button still shows red when active"
+                >
+                  {showListeningIndicator ? "Hide while recording" : "Show"}
+                </button>
+              </div>
+
+              <div style={{ marginBottom: "20px" }}>
+                <label
+                  style={{
+                    color: "white",
+                    display: "block",
+                    marginBottom: "8px",
+                  }}
+                >
                   Text centering offset (top/bottom): {centerPaddingVh}vh
                 </label>
                 <div
@@ -3927,17 +4063,30 @@ Happy recording!`);
               height="28"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#ffeb3b"
+              stroke={aimColor}
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
               style={{ opacity: aimOpacity }}
             >
-              <circle cx="12" cy="12" r="2" />
-              <path d="M12 1v4" />
-              <path d="M12 19v4" />
-              <path d="M1 12h4" />
-              <path d="M19 12h4" />
+              {aimStyle === "dot" ? (
+                <circle cx="12" cy="12" r="4" fill={aimColor} stroke="none" />
+              ) : aimStyle === "frame" ? (
+                <>
+                  <path d="M3 8V3h5" />
+                  <path d="M16 3h5v5" />
+                  <path d="M21 16v5h-5" />
+                  <path d="M8 21H3v-5" />
+                </>
+              ) : (
+                <>
+                  <circle cx="12" cy="12" r="2" />
+                  <path d="M12 1v4" />
+                  <path d="M12 19v4" />
+                  <path d="M1 12h4" />
+                  <path d="M19 12h4" />
+                </>
+              )}
             </svg>
           </div>
         )}
@@ -4006,8 +4155,8 @@ Happy recording!`);
         </div>
       )}
 
-      {/* Status Indicator */}
-      {isListening && (
+      {/* Status Indicator (hideable in settings — can distract on camera) */}
+      {isListening && showListeningIndicator && (
         <div
           style={{
             position: "fixed",
