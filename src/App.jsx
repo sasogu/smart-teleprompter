@@ -40,6 +40,12 @@ function Icon({ name }) {
   );
 }
 
+// Co-host speaker markers (GitHub #2): a line starting with ">>" or "@Name:"
+// belongs to another speaker. It renders dimmed and voice tracking skips it,
+// so shared scripts auto-jump to the presenter's next line no matter how long
+// the co-host's part is.
+const CO_HOST_LINE_RE = /^\s*(>>|@[^\s:]{1,30}:)/;
+
 // One rendered line of the script, memoized.
 // Why: speech recognition fires a result every ~100-300ms and each one updates
 // currentWordIndex. Before, that re-rendered EVERY word span in the script
@@ -51,6 +57,7 @@ const TeleprompterLine = memo(function TeleprompterLine({
   lineIdx,
   lineStart,
   activeIndex, // global index of the current word if it is in this line, else -1
+  isCoHost, // dimmed, skipped by voice tracking
   showHighlight,
   highlightColor,
   textColor,
@@ -70,6 +77,8 @@ const TeleprompterLine = memo(function TeleprompterLine({
           ? `rgba(255, 235, 59, ${paragraphHighlightOpacity})`
           : "transparent",
         outline: isCurrentLine ? `1px dashed ${highlightColor}33` : "none",
+        opacity: isCoHost ? 0.45 : 1,
+        fontStyle: isCoHost ? "italic" : "normal",
       }}
     >
       {words.map((word, i) => {
@@ -284,6 +293,9 @@ Happy recording!`);
   const [aimStyle, setAimStyle] = useState("crosshair"); // crosshair | dot | frame
   const [aimColor, setAimColor] = useState("#ffeb3b");
   const [showListeningIndicator, setShowListeningIndicator] = useState(true);
+  // Co-host lines (">>" / "@Name:") — dim them and let voice tracking skip them
+  const [skipCoHostLines, setSkipCoHostLines] = useState(true);
+  const [lineIsCoHost, setLineIsCoHost] = useState([]);
   const [textOpacity, setTextOpacity] = useState(0.8);
   const [aimOpacity, setAimOpacity] = useState(1);
   const [uiOpacity, setUiOpacity] = useState(0.9);
@@ -356,6 +368,11 @@ Happy recording!`);
   const linesRawRef = useRef([]);
   const linesWordsRef = useRef([]);
   const lineStartIndexRef = useRef([]);
+  // Co-host markers: per-line + per-word skip flags, and a live ref for the
+  // setting (refs so the speech-recognition closures always see fresh values)
+  const lineIsCoHostRef = useRef([]);
+  const skippableWordsRef = useRef([]);
+  const skipCoHostRef = useRef(true);
   const isListeningRef = useRef(false);
   const currentWordIndexRef = useRef(-1);
   const textContainerRef = useRef(null);
@@ -583,6 +600,7 @@ Happy recording!`);
     aimStyle: "crosshair",
     aimColor: "#ffeb3b",
     showListeningIndicator: true,
+    skipCoHostLines: true,
     textOpacity: 0.8,
     aimOpacity: 1,
     uiOpacity: 0.9,
@@ -611,6 +629,7 @@ Happy recording!`);
     setAimStyle(defaultSettings.aimStyle);
     setAimColor(defaultSettings.aimColor);
     setShowListeningIndicator(defaultSettings.showListeningIndicator);
+    setSkipCoHostLines(defaultSettings.skipCoHostLines);
     setTextOpacity(defaultSettings.textOpacity);
     setAimOpacity(defaultSettings.aimOpacity);
     setUiOpacity(defaultSettings.uiOpacity);
@@ -851,6 +870,7 @@ Happy recording!`);
       if (s.aimColor) setAimColor(s.aimColor);
       if (s.showListeningIndicator != null)
         setShowListeningIndicator(s.showListeningIndicator);
+      if (s.skipCoHostLines != null) setSkipCoHostLines(s.skipCoHostLines);
       if (s.textOpacity != null) setTextOpacity(s.textOpacity);
       if (s.aimOpacity != null) setAimOpacity(s.aimOpacity);
       if (s.uiOpacity != null) setUiOpacity(s.uiOpacity);
@@ -889,6 +909,7 @@ Happy recording!`);
         aimStyle,
         aimColor,
         showListeningIndicator,
+        skipCoHostLines,
         textOpacity,
         aimOpacity,
         uiOpacity,
@@ -923,6 +944,7 @@ Happy recording!`);
     aimStyle,
     aimColor,
     showListeningIndicator,
+    skipCoHostLines,
     textOpacity,
     aimOpacity,
     uiOpacity,
@@ -934,6 +956,12 @@ Happy recording!`);
     mirrorX,
     text,
   ]);
+
+  // Keep the co-host-skip flag in a ref so recognition callbacks (created
+  // once per mic session) always see the current value without re-binding.
+  useEffect(() => {
+    skipCoHostRef.current = skipCoHostLines;
+  }, [skipCoHostLines]);
 
   // Sync body background with setting
   useEffect(() => {
@@ -1019,17 +1047,27 @@ Happy recording!`);
     );
     linesWordsRef.current = linesWords;
 
+    // Which lines belong to a co-host (">>" / "@Name:" prefix)
+    const lineIsCoHostArr = lines.map((ln) => CO_HOST_LINE_RE.test(ln));
+    lineIsCoHostRef.current = lineIsCoHostArr;
+
     const flatWords = [];
     const starts = [];
+    const skippable = [];
     for (let i = 0; i < linesWords.length; i++) {
       starts.push(flatWords.length);
-      for (const w of linesWords[i]) flatWords.push(w);
+      for (const w of linesWords[i]) {
+        flatWords.push(w);
+        skippable.push(lineIsCoHostArr[i]);
+      }
     }
     lineStartIndexRef.current = starts;
     wordsRef.current = flatWords;
     normalizedWordsRef.current = flatWords.map(normalizeWord);
+    skippableWordsRef.current = skippable;
     setLinesWords(linesWords);
     setLineStartIndex(starts);
+    setLineIsCoHost(lineIsCoHostArr);
   }, [text]);
 
   useEffect(() => {
@@ -1415,20 +1453,35 @@ Happy recording!`);
     const candidates = tokens.filter(Boolean).slice(-3);
     if (candidates.length === 0) return { index: -1, nUsed: 0 };
 
-    const windowEnd = Math.min(
-      normalizedWordsRef.current.length,
-      startIndex + Math.max(1, maxWindow)
-    );
+    // Build the list of searchable word indices. Co-host words (">>" /
+    // "@Name:" lines) are excluded when skipping is enabled, so the window
+    // "flows over" another speaker's block no matter how long it is —
+    // the window budget is only spent on the presenter's own words.
+    const skip = skipCoHostRef.current ? skippableWordsRef.current : null;
+    const total = normalizedWordsRef.current.length;
+    const searchIdx = [];
+    for (
+      let i = startIndex;
+      i < total && searchIdx.length < Math.max(1, maxWindow);
+      i++
+    ) {
+      if (skip && skip[i]) continue;
+      searchIdx.push(i);
+    }
 
     // Strict 3-gram then 2-gram equality (can jump further)
     for (let n = Math.min(3, candidates.length); n >= 2; n--) {
       const seq = candidates.slice(-n);
-      for (let i = startIndex; i < windowEnd; i++) {
+      for (const i of searchIdx) {
         let ok = true;
         for (let k = 0; k < n; k++) {
           const target = normalizedWordsRef.current[i + k];
           const token = seq[k];
-          if (!target || !tokensEqual(target, token)) {
+          if (
+            !target ||
+            (skip && skip[i + k]) ||
+            !tokensEqual(target, token)
+          ) {
             ok = false;
             break;
           }
@@ -1437,21 +1490,17 @@ Happy recording!`);
       }
     }
 
-    // 1-token equality but restrict jump
-    const softLimit = Math.min(
-      windowEnd,
-      startIndex + Math.max(1, maxSoftSkip + 1)
-    );
-    for (let i = startIndex; i < softLimit; i++) {
+    // 1-token equality but restrict jump (first few searchable words only)
+    const softIdx = searchIdx.slice(0, Math.max(1, maxSoftSkip + 1));
+    const t1 = candidates[candidates.length - 1];
+    for (const i of softIdx) {
       const target = normalizedWordsRef.current[i];
-      const t1 = candidates[candidates.length - 1];
       if (tokensEqual(target, t1)) return { index: i, nUsed: 1 };
     }
 
     // soft matches (prefix/contains) within soft limit
-    for (let i = startIndex; i < softLimit; i++) {
+    for (const i of softIdx) {
       const target = normalizedWordsRef.current[i];
-      const t1 = candidates[candidates.length - 1];
       if (tokensSoftMatch(target, t1)) return { index: i, nUsed: 1 };
     }
 
@@ -1484,6 +1533,10 @@ Happy recording!`);
     maxSoftSkip = 1,
     allowSoft = true
   ) => {
+    // Never match inside a co-host line — fall through to the wider search
+    // (tryAdvanceByTokens), which skips over it entirely.
+    if (skipCoHostRef.current && lineIsCoHostRef.current[lineIdx])
+      return -1;
     const { start: ls, end: leFull } = getLineBounds(lineIdx);
     const le = headLimit ? Math.min(ls + headLimit - 1, leFull) : leFull;
     const localStart = Math.max(startIndex, ls);
@@ -3257,8 +3310,8 @@ Happy recording!`);
                     const rect = e.currentTarget.getBoundingClientRect();
                     const x = e.clientX - rect.left;
                     const percentage = x / rect.width;
-                    const newValue = Math.round(1 + percentage * (20 - 1));
-                    setLookaheadWindow(Math.max(1, Math.min(20, newValue)));
+                    const newValue = Math.round(1 + percentage * (40 - 1));
+                    setLookaheadWindow(Math.max(1, Math.min(40, newValue)));
                   }}
                 >
                   <div className="custom-slider-track" />
@@ -3266,7 +3319,7 @@ Happy recording!`);
                     className="custom-slider-thumb"
                     style={{
                       left: `calc(${
-                        ((lookaheadWindow - 1) / (20 - 1)) * 100
+                        ((lookaheadWindow - 1) / (40 - 1)) * 100
                       }% - 8px)`,
                     }}
                     onMouseDown={(e) => {
@@ -3275,7 +3328,10 @@ Happy recording!`);
                       const startValue = lookaheadWindow;
                       const rect =
                         e.currentTarget.parentElement.getBoundingClientRect();
-                      const maxValue = 20;
+                      // Max raised 20 -> 40 (GitHub #2): lets tracking skip
+                      // over a co-host's lines. Safe because far jumps still
+                      // require a 2-3 word exact match (see tryAdvanceByTokens)
+                      const maxValue = 40;
                       const minValue = 1;
 
                       const handleMouseMove = (moveEvent) => {
@@ -3307,6 +3363,40 @@ Happy recording!`);
                 >
                   Increase if voice tracking feels slow (recommended: 12-15 for
                   English, 8-10 for Greek)
+                </div>
+              </div>
+
+              <div style={{ marginBottom: "20px" }}>
+                <label
+                  style={{
+                    color: "white",
+                    display: "block",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Co-host lines: {skipCoHostLines ? "Skip" : "Off"}
+                </label>
+                <button
+                  onClick={() => setSkipCoHostLines(!skipCoHostLines)}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid #555",
+                    background: skipCoHostLines ? "#2e7d32" : "#37474f",
+                    color: "white",
+                    cursor: "pointer",
+                  }}
+                  aria-label="Toggle co-host line skipping"
+                  title='Lines starting with ">>" or "@Name:" are dimmed and voice tracking jumps over them'
+                >
+                  {skipCoHostLines ? "Enabled" : "Enable"}
+                </button>
+                <div
+                  style={{ color: "#aaa", fontSize: "12px", marginTop: "4px" }}
+                >
+                  Start a line with &gt;&gt; or @Name: to mark it as another
+                  speaker's — it shows dimmed and voice tracking skips it
                 </div>
               </div>
 
@@ -4112,6 +4202,7 @@ Happy recording!`);
                 lineIdx={lineIdx}
                 lineStart={lineStart}
                 activeIndex={activeIndex}
+                isCoHost={!!(skipCoHostLines && lineIsCoHost[lineIdx])}
                 showHighlight={showHighlight}
                 highlightColor={highlightColor}
                 textColor={textColor}
@@ -4503,6 +4594,21 @@ Happy recording!`);
                 Please enter the script text.
               </div>
             )}
+            <div
+              style={{
+                color: "#888",
+                fontSize: "12px",
+                marginTop: "-8px",
+                marginBottom: "12px",
+                lineHeight: 1.5,
+              }}
+            >
+              💡 Recording with a co-host? Start their lines with{" "}
+              <code style={{ color: "#ffd54f" }}>&gt;&gt;</code> or{" "}
+              <code style={{ color: "#ffd54f" }}>@Name:</code> — they'll appear
+              dimmed and voice tracking will skip to your next line
+              automatically.
+            </div>
 
             <div
               style={{

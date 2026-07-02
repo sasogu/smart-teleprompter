@@ -17,8 +17,11 @@ A free, open-source teleprompter application that uses real-time speech recognit
 - **Real-time speech tracking** with 20+ language support
 - **Automatic scrolling** that follows your voice
 - **Word highlighting** as you speak
-- **Smart matching** with configurable lookahead window
+- **Smart matching** with configurable lookahead window (up to 40 words)
 - **Interim results** for faster response
+- **Co-host mode** — start a line with `>>` or `@Name:` to mark it as another
+  speaker's: it renders dimmed and voice tracking automatically skips over it
+  to your next line, no matter how long their part is
 
 ### 🎨 Customization
 

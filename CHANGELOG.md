@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- 🎭 **Co-Host Mode**: Start a line with `>>` or `@Name:` to mark it as another speaker's — it renders dimmed and voice tracking skips over it to your next line regardless of its length. Toggleable in Settings (GitHub #2)
 - 🎯 **Aim Marker Styles**: Choose crosshair, dot, or camera-frame marker in 5 colors (yellow, blue, red, green, white) — community request from r/elgato
 - 🔴 **Hideable "Listening" Indicator**: New setting hides the red pill during recording for a clean on-camera view — community request from r/elgato
 - 🏠 **Landing Page**: New feature cards for Share via Link and Offline/Installable, plus an install-as-app tip
@@ -16,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - ⚡ **Snappier Word Highlight**: Highlight transition reduced 0.2s → 0.1s after feedback that word marking felt sluggish
+- 🔭 **Wider Lookahead Range**: Lookahead window slider max raised from 20 to 40 words so voice tracking can skip over a co-host's lines in shared scripts (GitHub #2)
 
 ## [2.1.0] - 2026-07-02
 
