@@ -18,14 +18,24 @@
     body { background: #000; margin: 0; }
     #root { height: 100%; }
   </style>
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-0WB94SE96L"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-0WB94SE96L');
-    </script>
+    <!--
+      Analytics: Cloudflare Web Analytics (cookieless, privacy-first).
+      Replaces Google Analytics so the "no data collection" promise on the
+      landing page is actually true — CF Web Analytics sets no cookies and
+      stores no personal data, so no consent banner is needed.
+      EASIEST SETUP: Cloudflare Dashboard -> your Pages project -> Metrics ->
+      enable "Web Analytics" (Cloudflare then injects the beacon automatically;
+      keep the tag below commented out).
+      MANUAL ALTERNATIVE: Dashboard -> Web Analytics -> Add site -> copy the
+      token, paste it below and uncomment the tag.
+    -->
+    <!--
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "PASTE_YOUR_CF_ANALYTICS_TOKEN"}'
+    ></script>
+    -->
 </head>
 <body>
     <div id="root"></div>

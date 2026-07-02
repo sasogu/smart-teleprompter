@@ -1,17 +1,102 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo } from "react";
+
+// Inline SVG icons (Heroicons v2.1.1 outline, MIT). Inlined instead of
+// loading from unpkg.com so the UI has zero external requests, renders
+// instantly, and keeps working offline / if the CDN is down.
+const ICON_PATHS = {
+  "arrow-up-tray":
+    "M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5",
+  microphone:
+    "M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z",
+  pause: "M15.75 5.25v13.5m-7.5-13.5v13.5",
+  play: "M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z",
+  "arrow-path":
+    "M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99",
+  "pencil-square":
+    "M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10",
+  "adjustments-horizontal":
+    "M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75",
+  "arrows-pointing-in":
+    "M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25",
+  "arrows-pointing-out":
+    "M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15",
+};
 
 function Icon({ name }) {
   return (
-    <img
-      src={`https://unpkg.com/heroicons@2.1.1/24/outline/${name}.svg`}
+    <svg
       width="22"
       height="22"
-      style={{ filter: "invert(1) brightness(2)" }}
-      alt=""
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="white"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
       aria-hidden="true"
-    />
+    >
+      <path d={ICON_PATHS[name]} />
+    </svg>
   );
 }
+
+// One rendered line of the script, memoized.
+// Why: speech recognition fires a result every ~100-300ms and each one updates
+// currentWordIndex. Before, that re-rendered EVERY word span in the script
+// (thousands of spans for long scripts). With memo + an `activeIndex` that is
+// -1 for lines not containing the current word, only the line losing the
+// highlight and the line gaining it re-render. Large scripts stay smooth.
+const TeleprompterLine = memo(function TeleprompterLine({
+  words,
+  lineIdx,
+  lineStart,
+  activeIndex, // global index of the current word if it is in this line, else -1
+  showHighlight,
+  highlightColor,
+  textColor,
+  paragraphSpacingPx,
+  paragraphHighlightOpacity,
+  onWordClick,
+}) {
+  const isCurrentLine = activeIndex >= 0;
+  return (
+    <div
+      id={`line-${lineIdx}`}
+      style={{
+        padding: "4px 8px",
+        margin: `${Math.max(0, paragraphSpacingPx / 4)}px 0`,
+        borderRadius: "6px",
+        backgroundColor: isCurrentLine
+          ? `rgba(255, 235, 59, ${paragraphHighlightOpacity})`
+          : "transparent",
+        outline: isCurrentLine ? `1px dashed ${highlightColor}33` : "none",
+      }}
+    >
+      {words.map((word, i) => {
+        const index = lineStart + i;
+        const isCurrent = index === activeIndex;
+        return (
+          <span
+            key={index}
+            id={`word-${index}`}
+            style={{
+              backgroundColor:
+                isCurrent && showHighlight ? highlightColor : "transparent",
+              color: isCurrent && showHighlight ? "#000" : textColor,
+              borderRadius: "2px",
+              transition: "background-color 0.2s ease, color 0.2s ease",
+              fontWeight: "normal",
+              cursor: "pointer",
+            }}
+            onClick={() => onWordClick(index)}
+          >
+            {word}{" "}
+          </span>
+        );
+      })}
+    </div>
+  );
+});
 
 function IconButton({
   onClick,
@@ -253,7 +338,7 @@ Happy recording!`);
   const [addScriptLanguage, setAddScriptLanguage] = useState("en-US");
   const [scriptFormTouched, setScriptFormTouched] = useState(false);
   const [deleteScriptConfirm, setDeleteScriptConfirm] = useState(null);
-  const [renderMarkdown, setRenderMarkdown] = useState(false);
+  const [shareBusyId, setShareBusyId] = useState(null);
   const [paragraphSpacingPx, setParagraphSpacingPx] = useState(12);
   const [extraBottomSpacePx, setExtraBottomSpacePx] = useState(0);
 
@@ -490,7 +575,6 @@ Happy recording!`);
     textOpacity: 0.8,
     aimOpacity: 1,
     uiOpacity: 0.9,
-    renderMarkdown: false,
     paragraphSpacingPx: 4,
     sidePaddingVw: 20,
     textAlignStyle: "left",
@@ -516,7 +600,6 @@ Happy recording!`);
     setTextOpacity(defaultSettings.textOpacity);
     setAimOpacity(defaultSettings.aimOpacity);
     setUiOpacity(defaultSettings.uiOpacity);
-    setRenderMarkdown(defaultSettings.renderMarkdown);
     setParagraphSpacingPx(defaultSettings.paragraphSpacingPx);
     setSidePaddingVw(defaultSettings.sidePaddingVw);
     setTextAlignStyle(defaultSettings.textAlignStyle);
@@ -630,6 +713,100 @@ Happy recording!`);
     if (script.language) setLanguage(script.language);
   };
 
+  // --- Share a script via link (Cloudflare Pages Function + KV) ---
+  // POST /api/share stores the script server-side for 30 days and returns a
+  // short id; the link opens the app on any device with ?share=<id>.
+  const shareScript = async (script) => {
+    if (shareBusyId) return;
+    setShareBusyId(script.id);
+    try {
+      const res = await fetch("/api/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: script.name,
+          text: script.text,
+          language: script.language || "en-US",
+        }),
+      });
+      if (!res.ok) {
+        alert(
+          res.status === 503
+            ? "Sharing is not configured on this deployment yet."
+            : "Could not create the share link. Please try again."
+        );
+        return;
+      }
+      const data = await res.json();
+      const url = `${window.location.origin}/app.html?share=${data.id}`;
+      let copied = false;
+      try {
+        await navigator.clipboard.writeText(url);
+        copied = true;
+      } catch (_) {}
+      alert(
+        (copied
+          ? "Share link copied to clipboard:\n\n"
+          : "Share link (copy it manually):\n\n") +
+          url +
+          "\n\nAnyone with the link can import this script. It expires in 30 days."
+      );
+    } catch (_) {
+      alert("Could not create the share link. Check your connection and try again.");
+    } finally {
+      setShareBusyId(null);
+    }
+  };
+
+  // Import a script that was shared via link (?share=<id>).
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const shareId = params.get("share");
+      if (!shareId) return;
+      // Strip the param immediately so a reload doesn't re-import.
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("share");
+        window.history.replaceState(
+          {},
+          "",
+          url.pathname + url.search + url.hash
+        );
+      } catch (_) {}
+      fetch(`/api/share/${encodeURIComponent(shareId)}`)
+        .then((r) =>
+          r.ok ? r.json() : Promise.reject(new Error(String(r.status)))
+        )
+        .then((data) => {
+          if (!data || typeof data.text !== "string" || !data.text.trim())
+            throw new Error("empty");
+          const newScript = {
+            id: Date.now().toString(),
+            name: (data.title || "Shared script").slice(0, 100),
+            text: data.text,
+            language: data.language || "en-US",
+            savedAt: new Date().toISOString(),
+          };
+          // Functional update: the fetch resolves after mount, so the saved
+          // scripts state is already populated; never overwrite it blindly.
+          setSavedScripts((prev) => {
+            const updated = [newScript, ...prev].slice(0, MAX_SCRIPTS);
+            try {
+              localStorage.setItem(SCRIPTS_KEY, JSON.stringify(updated));
+            } catch (_) {}
+            return updated;
+          });
+          setText(data.text);
+          if (data.language) setLanguage(data.language);
+          alert(`Shared script "${newScript.name}" was imported and loaded.`);
+        })
+        .catch(() => {
+          alert("This share link is invalid or has expired.");
+        });
+    } catch (_) {}
+  }, []);
+
   const confirmDeleteScript = () => {
     if (!deleteScriptConfirm) return;
     saveScriptsToStorage(savedScripts.filter((s) => s.id !== deleteScriptConfirm.id));
@@ -659,7 +836,6 @@ Happy recording!`);
       if (s.textOpacity != null) setTextOpacity(s.textOpacity);
       if (s.aimOpacity != null) setAimOpacity(s.aimOpacity);
       if (s.uiOpacity != null) setUiOpacity(s.uiOpacity);
-      if (s.renderMarkdown != null) setRenderMarkdown(s.renderMarkdown);
       if (s.paragraphSpacingPx != null)
         setParagraphSpacingPx(s.paragraphSpacingPx);
       if (s.sidePaddingVw != null) setSidePaddingVw(s.sidePaddingVw);
@@ -671,38 +847,44 @@ Happy recording!`);
     } catch (_) {}
   }, []);
 
-  // Persist settings on change
+  // Persist settings on change.
+  // Debounced (400ms): previously this serialized ALL settings PLUS the whole
+  // script text to localStorage on every keystroke — noticeable jank with
+  // long scripts. Also fixed: `language` and `mirrorX` were missing from the
+  // dependency array, so changing them alone was never persisted.
   useEffect(() => {
-    const s = {
-      fontSize,
-      margin,
-      lineHeight,
-      scrollSpeed,
-      bgColor,
-      textColor,
-      highlightColor,
-      followEnabled,
-      lookaheadWindow,
-      centerPaddingVh,
-      showAim,
-      aimOffsetX,
-      aimOffsetY,
-      textOpacity,
-      aimOpacity,
-      uiOpacity,
-      renderMarkdown,
-      paragraphSpacingPx,
-      sidePaddingVw,
-      textAlignStyle,
-      paragraphHighlightOpacity,
-      language,
-      mirrorX,
+    const timer = setTimeout(() => {
+      const s = {
+        fontSize,
+        margin,
+        lineHeight,
+        scrollSpeed,
+        bgColor,
+        textColor,
+        highlightColor,
+        followEnabled,
+        lookaheadWindow,
+        centerPaddingVh,
+        showAim,
+        aimOffsetX,
+        aimOffsetY,
+        textOpacity,
+        aimOpacity,
+        uiOpacity,
+        paragraphSpacingPx,
+        sidePaddingVw,
+        textAlignStyle,
+        paragraphHighlightOpacity,
+        language,
+        mirrorX,
 
-      text,
-    };
-    try {
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
-    } catch (_) {}
+        text,
+      };
+      try {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+      } catch (_) {}
+    }, 400);
+    return () => clearTimeout(timer);
   }, [
     fontSize,
     margin,
@@ -720,11 +902,12 @@ Happy recording!`);
     textOpacity,
     aimOpacity,
     uiOpacity,
-    renderMarkdown,
     paragraphSpacingPx,
     sidePaddingVw,
     textAlignStyle,
     paragraphHighlightOpacity,
+    language,
+    mirrorX,
     text,
   ]);
 
@@ -746,7 +929,6 @@ Happy recording!`);
       if (ext === "txt" || ext === "md" || ext === "markdown") {
         const txt = await file.text();
         setText(txt);
-        setRenderMarkdown(false);
         setShowEditor(true);
       } else {
         alert("Supported file types: .txt, .md");
@@ -1344,7 +1526,9 @@ Happy recording!`);
 
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
-      alert("Η αναγνώριση φωνής δεν υποστηρίζεται στον browser σας");
+      alert(
+        "Speech recognition is not supported in this browser. Please use Chrome or Edge, or press P for auto-scroll mode."
+      );
       return;
     }
 
@@ -1675,6 +1859,215 @@ Happy recording!`);
       programmaticScrollRef.current = false;
     }, 0);
   };
+
+  // ---- WebMCP: expose teleprompter controls to browser AI agents ----
+  // Keep the latest handlers/state reachable from tool callbacks without
+  // re-registering tools on every render.
+  const webmcpApiRef = useRef({});
+  useEffect(() => {
+    webmcpApiRef.current = {
+      setText,
+      setLanguage,
+      setScrollSpeed,
+      setFontSize,
+      toggleAutoPlay,
+      toggleListening,
+      resetPosition,
+      loadScript,
+      savedScripts,
+      isPlaying,
+      isListening,
+      language,
+      scrollSpeed,
+      fontSize,
+    };
+  });
+
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.modelContext) return;
+
+    const ok = (text) => ({ content: [{ type: "text", text }] });
+    const clampNum = (v, min, max, fallback) => {
+      const n = Number(v);
+      if (!Number.isFinite(n)) return fallback;
+      return Math.max(min, Math.min(max, n));
+    };
+
+    const tools = [
+      {
+        name: "load_script",
+        description:
+          "Replace the teleprompter script with new text. Optionally set the spoken language (BCP-47 code, e.g. en-US, el-GR).",
+        inputSchema: {
+          type: "object",
+          properties: {
+            text: {
+              type: "string",
+              description: "The full script text to display.",
+            },
+            language: {
+              type: "string",
+              description: "Optional BCP-47 language code, e.g. en-US or el-GR.",
+            },
+          },
+          required: ["text"],
+        },
+        async execute({ text, language } = {}) {
+          const api = webmcpApiRef.current;
+          const value = String(text ?? "");
+          api.setText(value);
+          if (language) api.setLanguage(String(language));
+          return ok(
+            `Loaded script (${value.length} characters)` +
+              (language ? `, language ${language}.` : ".")
+          );
+        },
+      },
+      {
+        name: "start_autoscroll",
+        description:
+          "Start automatic scrolling of the teleprompter at the current speed.",
+        inputSchema: { type: "object", properties: {} },
+        async execute() {
+          const api = webmcpApiRef.current;
+          if (!api.isPlaying) api.toggleAutoPlay();
+          return ok("Auto-scroll started.");
+        },
+      },
+      {
+        name: "start_voice_tracking",
+        description:
+          "Start microphone voice tracking so the teleprompter follows the reader's speech. Requires mic permission; desktop Chrome recommended.",
+        inputSchema: { type: "object", properties: {} },
+        async execute() {
+          const api = webmcpApiRef.current;
+          if (!api.isListening) api.toggleListening();
+          return ok("Voice tracking started.");
+        },
+      },
+      {
+        name: "stop",
+        description:
+          "Stop auto-scroll and voice tracking and reset the reading position to the top.",
+        inputSchema: { type: "object", properties: {} },
+        async execute() {
+          webmcpApiRef.current.resetPosition();
+          return ok("Stopped and reset to the beginning.");
+        },
+      },
+      {
+        name: "set_speed",
+        description: "Set the auto-scroll speed (1 = slowest, 100 = fastest).",
+        inputSchema: {
+          type: "object",
+          properties: {
+            speed: { type: "number", minimum: 1, maximum: 100 },
+          },
+          required: ["speed"],
+        },
+        async execute({ speed } = {}) {
+          const v = clampNum(speed, 1, 100, 88);
+          webmcpApiRef.current.setScrollSpeed(v);
+          return ok(`Scroll speed set to ${v}.`);
+        },
+      },
+      {
+        name: "set_font_size",
+        description: "Set the teleprompter font size in pixels (12–200).",
+        inputSchema: {
+          type: "object",
+          properties: {
+            size: { type: "number", minimum: 12, maximum: 200 },
+          },
+          required: ["size"],
+        },
+        async execute({ size } = {}) {
+          const v = clampNum(size, 12, 200, 32);
+          webmcpApiRef.current.setFontSize(v);
+          return ok(`Font size set to ${v}px.`);
+        },
+      },
+      {
+        name: "set_language",
+        description:
+          "Set the speech-recognition language using a BCP-47 code (e.g. en-US, el-GR, es-ES).",
+        inputSchema: {
+          type: "object",
+          properties: { language: { type: "string" } },
+          required: ["language"],
+        },
+        async execute({ language } = {}) {
+          webmcpApiRef.current.setLanguage(String(language));
+          return ok(`Language set to ${language}.`);
+        },
+      },
+      {
+        name: "list_scripts",
+        description:
+          "List the saved scripts in the user's local library (name and language).",
+        inputSchema: { type: "object", properties: {} },
+        async execute() {
+          const scripts = webmcpApiRef.current.savedScripts || [];
+          if (!scripts.length) return ok("No saved scripts.");
+          return ok(
+            scripts
+              .map((s, i) => `${i + 1}. ${s.name} [${s.language || "en-US"}]`)
+              .join("\n")
+          );
+        },
+      },
+      {
+        name: "load_saved_script",
+        description:
+          "Load a saved script from the library by its name (case-insensitive).",
+        inputSchema: {
+          type: "object",
+          properties: { name: { type: "string" } },
+          required: ["name"],
+        },
+        async execute({ name } = {}) {
+          const api = webmcpApiRef.current;
+          const scripts = api.savedScripts || [];
+          const target = scripts.find(
+            (s) =>
+              (s.name || "").toLowerCase() === String(name).toLowerCase()
+          );
+          if (!target) return ok(`No saved script named "${name}".`);
+          api.loadScript(target);
+          return ok(`Loaded "${target.name}".`);
+        },
+      },
+      {
+        name: "get_state",
+        description:
+          "Get the current teleprompter state: auto-scroll/voice status, language, speed and font size.",
+        inputSchema: { type: "object", properties: {} },
+        async execute() {
+          const a = webmcpApiRef.current;
+          return ok(
+            JSON.stringify({
+              autoScrolling: !!a.isPlaying,
+              voiceTracking: !!a.isListening,
+              language: a.language,
+              scrollSpeed: a.scrollSpeed,
+              fontSize: a.fontSize,
+            })
+          );
+        },
+      },
+    ];
+
+    try {
+      const mc = navigator.modelContext;
+      if (typeof mc.provideContext === "function") {
+        mc.provideContext({ tools });
+      } else if (typeof mc.registerTool === "function") {
+        tools.forEach((t) => mc.registerTool(t));
+      }
+    } catch (err) {
+      console.error("WebMCP registration failed:", err);
+    }
+  }, []);
 
   return (
     <main
@@ -2305,6 +2698,25 @@ Happy recording!`);
                               }}
                             >
                               Edit
+                            </button>
+                            <button
+                              onClick={() => shareScript(script)}
+                              disabled={shareBusyId === script.id}
+                              title="Create a link to open this script on another device (expires in 30 days)"
+                              style={{
+                                padding: "5px 10px",
+                                borderRadius: "5px",
+                                border: "1px solid #2e7d32",
+                                background: "transparent",
+                                color: "#81c784",
+                                cursor:
+                                  shareBusyId === script.id
+                                    ? "wait"
+                                    : "pointer",
+                                fontSize: "12px",
+                              }}
+                            >
+                              {shareBusyId === script.id ? "…" : "Share"}
                             </button>
                             <button
                               onClick={() => setDeleteScriptConfirm(script)}
@@ -3540,51 +3952,24 @@ Happy recording!`);
           {linesWords.map((lineWordsLocal, lineIdx) => {
             const lineStart = lineStartIndex[lineIdx] || 0;
             const lineEnd = lineStart + lineWordsLocal.length - 1;
-            const isCurrentLine =
-              currentWordIndex >= lineStart && currentWordIndex <= lineEnd;
+            const activeIndex =
+              currentWordIndex >= lineStart && currentWordIndex <= lineEnd
+                ? currentWordIndex
+                : -1;
             return (
-              <div
+              <TeleprompterLine
                 key={lineIdx}
-                id={`line-${lineIdx}`}
-                style={{
-                  padding: "4px 8px",
-                  margin: `${Math.max(0, paragraphSpacingPx / 4)}px 0`,
-                  borderRadius: "6px",
-                  backgroundColor: isCurrentLine
-                    ? `rgba(255, 235, 59, ${paragraphHighlightOpacity})`
-                    : "transparent",
-                  outline: isCurrentLine
-                    ? `1px dashed ${highlightColor}33`
-                    : "none",
-                }}
-              >
-                {lineWordsLocal.map((word, i) => {
-                  const index = lineStart + i;
-                  const isCurrent = index === currentWordIndex;
-                  return (
-                    <span
-                      key={index}
-                      id={`word-${index}`}
-                      style={{
-                        backgroundColor:
-                          isCurrent && showHighlight
-                            ? highlightColor
-                            : "transparent",
-                        color: isCurrent && showHighlight ? "#000" : textColor,
-                        borderRadius: "2px",
-                        transition:
-                          "background-color 0.2s ease, color 0.2s ease",
-                        fontWeight:
-                          isCurrent && showHighlight ? "normal" : "normal",
-                        cursor: "pointer",
-                      }}
-                      onClick={() => setCurrentWordIndex(index)}
-                    >
-                      {word}{" "}
-                    </span>
-                  );
-                })}
-              </div>
+                words={lineWordsLocal}
+                lineIdx={lineIdx}
+                lineStart={lineStart}
+                activeIndex={activeIndex}
+                showHighlight={showHighlight}
+                highlightColor={highlightColor}
+                textColor={textColor}
+                paragraphSpacingPx={paragraphSpacingPx}
+                paragraphHighlightOpacity={paragraphHighlightOpacity}
+                onWordClick={setCurrentWordIndex}
+              />
             );
           })}
           {/* dynamic spacer to guarantee room to center near the end */}

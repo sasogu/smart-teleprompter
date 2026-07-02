@@ -1,0 +1,13 @@
+{
+  "$schema": "https://agentskills.io/schema/agent-skills-discovery-v0.2.0.json",
+  "version": "0.2.0",
+  "skills": [
+    {
+      "name": "smart-teleprompter",
+      "type": "text/markdown",
+      "description": "Control the Smart Teleprompter web app — load a script, drive auto-scroll or voice tracking, and adjust reading settings.",
+      "url": "https://smarttelepromter.com/.well-known/agent-skills/teleprompter.md",
+      "sha256": "6a8854899696db01a31ba1532aee65998bb6969be0454dfde1ee648c63081963"
+    }
+  ]
+}

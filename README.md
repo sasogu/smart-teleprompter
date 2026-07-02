@@ -4,7 +4,7 @@ A free, open-source teleprompter application that uses real-time speech recognit
 
 **🌐 Live at [smarttelepromter.com](https://smarttelepromter.com)**
 
-![Version](https://img.shields.io/badge/Version-1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/Version-2.1.0-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 ![React](https://img.shields.io/badge/React-19-blue.svg)
 ![Vite](https://img.shields.io/badge/Vite-6-purple.svg)
@@ -194,8 +194,20 @@ The `dist/` output is ready for any static hosting. Includes:
 - `_headers` — Cloudflare Pages security headers + cache control
 - `_redirects` — Clean URL routing (`/app` → `/app.html`)
 - `manifest.json` — PWA manifest
+- `sw.js` — Service worker (offline support / installable PWA)
 
 Deploy to Cloudflare Pages, Vercel, Netlify, or any static host.
+
+### Cloudflare extras (optional, free tier)
+
+- **Script sharing** (`functions/api/share/`) needs a KV namespace bound to
+  the Pages project as `SHARES` (Workers & Pages → project → Settings →
+  Bindings → Add → KV namespace, variable name `SHARES`). Without the
+  binding the app works normally — the Share button just reports that
+  sharing isn't configured.
+- **Analytics**: enable Cloudflare Web Analytics for the Pages project
+  (Metrics tab), or paste your beacon token in `index.html`/`app.html`
+  where marked. Cookieless — no consent banner needed.
 
 ## 🤝 Contributing
 

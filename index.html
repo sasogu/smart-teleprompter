@@ -66,14 +66,17 @@
       name="twitter:image"
       content="https://smarttelepromter.com/smartTeleprompter.jpg"
     />
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-0WB94SE96L"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-0WB94SE96L');
-    </script>
+    <!--
+      Analytics: Cloudflare Web Analytics (cookieless, privacy-first).
+      Replaces Google Analytics — see comment in app.html for setup options.
+    -->
+    <!--
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "PASTE_YOUR_CF_ANALYTICS_TOKEN"}'
+    ></script>
+    -->
 
     <!-- Structured Data -->
     <script type="application/ld+json">
@@ -92,7 +95,7 @@
       "description": "Free, open-source voice activated teleprompter with real-time speech tracking. Supports 20+ languages with script library, auto-scroll, and full customization.",
       "screenshot": "https://smarttelepromter.com/smartTeleprompter.jpg",
       "featureList": "Voice activated scrolling, 20+ languages, Script library, Auto-scroll, Customizable fonts and colors, Mirror mode, Fullscreen, Keyboard shortcuts",
-      "softwareVersion": "1.0.0",
+      "softwareVersion": "2.1.0",
       "author": {
         "@type": "Person",
         "name": "Voumellis",
@@ -453,10 +456,14 @@
                 </li>
                 <li>
                   <strong>Local Storage:</strong> All data stays on your device
-                  (no cloud storage)
+                  (scripts are only uploaded if you explicitly use the Share
+                  feature, and shared copies auto-delete after 30 days)
                 </li>
                 <li>
-                  <strong>Privacy:</strong> Your scripts and settings stay on your device. We use Google Analytics to track anonymous usage statistics for page views, country, browser
+                  <strong>Privacy:</strong> Your scripts and settings stay on
+                  your device. No Google Analytics, no cookies — only
+                  cookieless, anonymous page-view counts via Cloudflare Web
+                  Analytics
                 </li>
               </ul>
               <p class="text-green-400 font-semibold">

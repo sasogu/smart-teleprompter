@@ -5,6 +5,29 @@ All notable changes to Smart Teleprompter will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-07-02
+
+### Added
+
+- 🔗 **Share Scripts via Link**: New Share button in the script library creates a link (`?share=<id>`) that opens the script on any device. Backed by a Cloudflare Pages Function + KV (free tier); shares auto-expire after 30 days
+- 📴 **Offline Support / Installable PWA**: New service worker caches the app shell and hashed assets — auto-scroll mode now works fully offline (ideal for iPhone/iPad where it is the only mode), and the app can be installed from the browser
+- ⚙️ **CI Pipeline**: GitHub Actions workflow runs tests and a production build on every push/PR
+
+### Changed
+
+- 🖼️ **Icons Inlined**: Toolbar icons are now inline SVG instead of being fetched from unpkg.com — zero external requests, instant rendering, works offline
+- ⚡ **Rendering Performance**: Script lines are memoized; a speech-recognition result now re-renders only the affected lines instead of every word span (large scripts stay smooth)
+- 💾 **Settings Persistence**: Debounced (400ms) — no more full-settings serialization on every keystroke
+- 📊 **Analytics**: Replaced Google Analytics with cookieless Cloudflare Web Analytics; landing-page privacy text updated accordingly
+- 🔒 **CSP Tightened**: Removed unpkg.com, googletagmanager.com, and google-analytics.com from the Content-Security-Policy
+
+### Fixed
+
+- 🐛 **Settings Not Saving**: `language` and `mirrorX` were missing from the persistence dependency list — changing only them was never saved
+- 🌐 **Greek Alert in English UI**: "Speech recognition not supported" message is now in English and suggests auto-scroll mode
+- 🧹 **Dead Code Removed**: Non-functional `renderMarkdown` state (including a call that could crash file import) and the obsolete Apache `.htaccess`
+- 🏷️ **Version Mismatch**: package.json, README badge, and JSON-LD `softwareVersion` now report the real version
+
 ## [2.0.1] - 2026-03-30
 
 ### Fixed
