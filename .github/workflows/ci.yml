@@ -1,0 +1,29 @@
+# CI: runs the Vitest suite and a production build on every push/PR.
+# Why: the project already had 9 tests but nothing ran them automatically —
+# a regression could reach Cloudflare Pages unnoticed. This catches it first.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build
