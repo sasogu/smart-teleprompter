@@ -19,6 +19,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ⚡ **Snappier Word Highlight**: Highlight transition reduced 0.2s → 0.1s after feedback that word marking felt sluggish
 - 🔭 **Wider Lookahead Range**: Lookahead window slider max raised from 20 to 40 words so voice tracking can skip over a co-host's lines in shared scripts (GitHub #2)
 
+### Fixed
+
+- 🐛 **Tooltip Position**: Toolbar tooltips drifted toward mid-screen once the script had scrolled (visible in the installed PWA) — fixed-position tooltips were offset by `window.scrollY`
+- 📱 **Tooltips on Touch Devices**: No longer shown — they only appeared after the tap had already fired and referenced keyboard shortcuts that don't exist on mobile
+- ↔️ **Tooltip Clipping**: Tooltips near the screen edge (e.g. leftmost toolbar buttons) now shift to stay fully visible
+- 📱 **Toolbar Overflow Hints**: On narrow screens, tappable arrow buttons with edge fades now show when more toolbar icons are hidden off-screen — previously nothing indicated the toolbar scrolls horizontally
+
 ## [2.1.0] - 2026-07-02
 
 ### Added

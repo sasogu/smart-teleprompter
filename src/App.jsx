@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, memo } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, memo } from "react";
 
 // Inline SVG icons (Heroicons v2.1.1 outline, MIT). Inlined instead of
 // loading from unpkg.com so the UI has zero external requests, renders
@@ -123,20 +123,47 @@ function IconButton({
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const tipTimer = useRef(null);
   const buttonRef = useRef(null);
+  const tipRef = useRef(null);
 
   const openWithDelay = () => {
+    // No tooltips on touch devices: they'd only appear together with the tap
+    // (after the action already fired) and they advertise keyboard shortcuts
+    // that don't exist there. aria-labels still cover accessibility.
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia("(hover: none)").matches
+    )
+      return;
     if (tipTimer.current) clearTimeout(tipTimer.current);
     tipTimer.current = setTimeout(() => {
       if (buttonRef.current) {
         const rect = buttonRef.current.getBoundingClientRect();
+        // The tooltip uses position:fixed, which is viewport-relative —
+        // getBoundingClientRect() is already viewport-relative, so adding
+        // window.scrollY here pushed the tooltip down by the scroll amount
+        // (it appeared mid-screen once the script had scrolled).
         setTooltipPosition({
-          top: rect.bottom + window.scrollY + 8,
-          left: rect.left + window.scrollX + rect.width / 2,
+          top: rect.bottom + 8,
+          left: rect.left + rect.width / 2,
         });
       }
       setShowTip(true);
     }, 200);
   };
+
+  // After the tooltip renders, nudge it back inside the viewport if it
+  // overflows an edge (e.g. the leftmost toolbar buttons).
+  useLayoutEffect(() => {
+    if (!showTip || !tipRef.current) return;
+    const r = tipRef.current.getBoundingClientRect();
+    let dx = 0;
+    if (r.left < 8) dx = 8 - r.left;
+    else if (r.right > window.innerWidth - 8)
+      dx = window.innerWidth - 8 - r.right;
+    if (dx !== 0)
+      setTooltipPosition((p) => ({ ...p, left: p.left + dx }));
+  }, [showTip]);
 
   const closeTip = () => {
     if (tipTimer.current) clearTimeout(tipTimer.current);
@@ -175,6 +202,7 @@ function IconButton({
       </button>
       {showTip && (
         <div
+          ref={tipRef}
           style={{
             position: "fixed",
             top: tooltipPosition.top,
@@ -296,6 +324,11 @@ Happy recording!`);
   // Co-host lines (">>" / "@Name:") — dim them and let voice tracking skip them
   const [skipCoHostLines, setSkipCoHostLines] = useState(true);
   const [lineIsCoHost, setLineIsCoHost] = useState([]);
+  // Toolbar overflow hints (mobile): which directions have hidden icons
+  const [toolbarHints, setToolbarHints] = useState({
+    left: false,
+    right: false,
+  });
   const [textOpacity, setTextOpacity] = useState(0.8);
   const [aimOpacity, setAimOpacity] = useState(1);
   const [uiOpacity, setUiOpacity] = useState(0.9);
@@ -368,6 +401,7 @@ Happy recording!`);
   const linesRawRef = useRef([]);
   const linesWordsRef = useRef([]);
   const lineStartIndexRef = useRef([]);
+  const toolbarScrollRef = useRef(null);
   // Co-host markers: per-line + per-word skip flags, and a live ref for the
   // setting (refs so the speech-recognition closures always see fresh values)
   const lineIsCoHostRef = useRef([]);
@@ -962,6 +996,31 @@ Happy recording!`);
   useEffect(() => {
     skipCoHostRef.current = skipCoHostLines;
   }, [skipCoHostLines]);
+
+  // Toolbar overflow hints: on narrow screens the toolbar scrolls
+  // horizontally, but nothing indicated that more icons exist off-screen.
+  // Track scroll position and show tappable arrows + edge fades.
+  const updateToolbarHints = () => {
+    const el = toolbarScrollRef.current;
+    if (!el) return;
+    const left = el.scrollLeft > 4;
+    const right = el.scrollLeft + el.clientWidth < el.scrollWidth - 4;
+    setToolbarHints((prev) =>
+      prev.left === left && prev.right === right ? prev : { left, right }
+    );
+  };
+
+  const scrollToolbar = (dir) => {
+    const el = toolbarScrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * Math.max(150, el.clientWidth * 0.6), behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    updateToolbarHints();
+    window.addEventListener("resize", updateToolbarHints);
+    return () => window.removeEventListener("resize", updateToolbarHints);
+  }, []);
 
   // Sync body background with setting
   useEffect(() => {
@@ -2186,8 +2245,84 @@ Happy recording!`);
           borderBottom: "2px solid rgba(255,255,255,0.1)",
         }}
       >
+        {toolbarHints.left && (
+          <button
+            onClick={() => scrollToolbar(-1)}
+            aria-label="Scroll toolbar left"
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              left: 0,
+              width: "36px",
+              border: "none",
+              cursor: "pointer",
+              zIndex: 2,
+              background:
+                "linear-gradient(to right, rgba(0,0,0,0.95) 45%, rgba(0,0,0,0))",
+              color: "white",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-start",
+              paddingLeft: "4px",
+            }}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="white"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        )}
+        {toolbarHints.right && (
+          <button
+            onClick={() => scrollToolbar(1)}
+            aria-label="Scroll toolbar right"
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              right: 0,
+              width: "36px",
+              border: "none",
+              cursor: "pointer",
+              zIndex: 2,
+              background:
+                "linear-gradient(to left, rgba(0,0,0,0.95) 45%, rgba(0,0,0,0))",
+              color: "white",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              paddingRight: "4px",
+            }}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="white"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        )}
         <div
           className="toolbar-buttons"
+          ref={toolbarScrollRef}
+          onScroll={updateToolbarHints}
           style={{
             display: "flex",
             gap: "10px",
