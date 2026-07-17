@@ -15,6 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Settings now include a Support prompts toggle that hides Buy Me a Coffee buttons and support messages across the app and landing page.
 - The teleprompter app now has an interface language setting for English and Spanish, independent from the speech-recognition language.
 
+### Changed
+
+- Settings sliders (font size, speed, opacities, offsets, etc.) now use the Pointer Events API instead of mouse-only listeners, so dragging them works on touch devices, not just with a mouse.
+
+### Fixed
+
+- Opening a shared script link (`?share=`) no longer silently saves the script to your library and loads it — a confirmation dialog now appears first.
+- `POST /api/share` is now rate-limited per IP (20 shares/hour) to prevent abuse of the free KV write quota.
+
 ## [2.2.0] - 2026-07-02
 
 ### Added

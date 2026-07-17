@@ -20,6 +20,12 @@ const TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
 const ID_ALPHABET =
   "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
 
+// Per-IP rate limit, stored in the same free-tier KV namespace: caps how
+// many shares one origin can create per hour so a single bot/script can't
+// burn through the KV free plan's 1,000 writes/day on its own.
+const RATE_LIMIT_MAX = 20; // shares per IP per window
+const RATE_LIMIT_WINDOW_SECONDS = 60 * 60; // 1 hour
+
 function randomId(len = 10) {
   const bytes = new Uint8Array(len);
   crypto.getRandomValues(bytes);
@@ -35,10 +41,26 @@ function json(data, status = 200) {
   });
 }
 
+async function isRateLimited(env, ip) {
+  const windowId = Math.floor(Date.now() / (RATE_LIMIT_WINDOW_SECONDS * 1000));
+  const key = `ratelimit:${ip}:${windowId}`;
+  const current = parseInt((await env.SHARES.get(key)) || "0", 10);
+  if (current >= RATE_LIMIT_MAX) return true;
+  await env.SHARES.put(key, String(current + 1), {
+    expirationTtl: RATE_LIMIT_WINDOW_SECONDS,
+  });
+  return false;
+}
+
 export async function onRequestPost({ request, env }) {
   // Graceful degradation: if the KV binding is missing the UI shows a
   // "not configured" message instead of a crash.
   if (!env.SHARES) return json({ error: "sharing_not_configured" }, 503);
+
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  if (await isRateLimited(env, ip)) {
+    return json({ error: "rate_limited" }, 429);
+  }
 
   let body;
   try {

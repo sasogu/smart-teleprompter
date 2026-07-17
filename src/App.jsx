@@ -1,4 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef, memo } from "react";
+import CustomSlider from "./components/CustomSlider.jsx";
 
 // Inline SVG icons (Heroicons v2.1.1 outline, MIT). Inlined instead of
 // loading from unpkg.com so the UI has zero external requests, renders
@@ -184,6 +185,10 @@ const UI_TEXT = {
     resetAllSettingsTitle: "Reset All Settings?",
     resetAllSettingsBody:
       "This will restore all settings to their defaults: font size, colors, speed, language, and layout. Your script text will not be affected.",
+    importSharedScriptTitle: "Import Shared Script?",
+    importSharedScriptBody:
+      "Someone sent you a link to this script. Importing it will add it to your saved scripts and load it as the active text.",
+    importSharedScriptConfirm: "Import",
     shortcutsStartStopMic: "Start / Stop microphone",
     shortcutsAutoScroll: "Play / Pause auto-scroll",
     shortcutsHighlight: "Toggle word highlighting",
@@ -331,6 +336,10 @@ const UI_TEXT = {
     resetAllSettingsTitle: "¿Restablecer todos los ajustes?",
     resetAllSettingsBody:
       "Esto restaurará los ajustes por defecto: tamaño de letra, colores, velocidad, idioma y diseño. El texto del guion no se modificará.",
+    importSharedScriptTitle: "¿Importar guion compartido?",
+    importSharedScriptBody:
+      "Alguien te ha enviado un enlace a este guion. Importarlo lo añadirá a tus guiones guardados y lo cargará como texto activo.",
+    importSharedScriptConfirm: "Importar",
     shortcutsStartStopMic: "Iniciar / detener micrófono",
     shortcutsAutoScroll: "Reproducir / pausar autoavance",
     shortcutsHighlight: "Activar/desactivar resaltado",
@@ -839,6 +848,7 @@ Happy recording!`);
   const [addScriptLanguage, setAddScriptLanguage] = useState("en-US");
   const [scriptFormTouched, setScriptFormTouched] = useState(false);
   const [deleteScriptConfirm, setDeleteScriptConfirm] = useState(null);
+  const [pendingSharedScript, setPendingSharedScript] = useState(null);
   const [shareBusyId, setShareBusyId] = useState(null);
   const [paragraphSpacingPx, setParagraphSpacingPx] = useState(12);
   const [extraBottomSpacePx, setExtraBottomSpacePx] = useState(0);
@@ -1318,31 +1328,43 @@ Happy recording!`);
         .then((data) => {
           if (!data || typeof data.text !== "string" || !data.text.trim())
             throw new Error("empty");
-          const newScript = {
-            id: Date.now().toString(),
+          // Don't apply it yet — a link can come from anyone, so hold it
+          // until the user explicitly confirms the import (see the
+          // "Import Shared Script?" modal below).
+          setPendingSharedScript({
             name: (data.title || "Shared script").slice(0, 100),
             text: data.text,
             language: data.language || "en-US",
-            savedAt: new Date().toISOString(),
-          };
-          // Functional update: the fetch resolves after mount, so the saved
-          // scripts state is already populated; never overwrite it blindly.
-          setSavedScripts((prev) => {
-            const updated = [newScript, ...prev].slice(0, MAX_SCRIPTS);
-            try {
-              localStorage.setItem(SCRIPTS_KEY, JSON.stringify(updated));
-            } catch (_) {}
-            return updated;
           });
-          setText(data.text);
-          if (data.language) setLanguage(data.language);
-          alert(`Shared script "${newScript.name}" was imported and loaded.`);
         })
         .catch(() => {
           alert("This share link is invalid or has expired.");
         });
     } catch (_) {}
   }, []);
+
+  const confirmImportSharedScript = () => {
+    if (!pendingSharedScript) return;
+    const newScript = {
+      id: Date.now().toString(),
+      name: pendingSharedScript.name,
+      text: pendingSharedScript.text,
+      language: pendingSharedScript.language,
+      savedAt: new Date().toISOString(),
+    };
+    // Functional update: the fetch resolved before this click, so the saved
+    // scripts state may have changed since; never overwrite it blindly.
+    setSavedScripts((prev) => {
+      const updated = [newScript, ...prev].slice(0, MAX_SCRIPTS);
+      try {
+        localStorage.setItem(SCRIPTS_KEY, JSON.stringify(updated));
+      } catch (_) {}
+      return updated;
+    });
+    setText(pendingSharedScript.text);
+    if (pendingSharedScript.language) setLanguage(pendingSharedScript.language);
+    setPendingSharedScript(null);
+  };
 
   const confirmDeleteScript = () => {
     if (!deleteScriptConfirm) return;
@@ -2434,7 +2456,8 @@ Happy recording!`);
         return;
       }
       if (e.key === "Escape") {
-        if (deleteScriptConfirm) { setDeleteScriptConfirm(null); }
+        if (pendingSharedScript) { setPendingSharedScript(null); }
+        else if (deleteScriptConfirm) { setDeleteScriptConfirm(null); }
         else if (showAddScript) { setShowAddScript(false); }
         else if (showShortcuts) { setShowShortcuts(false); }
         else if (showResetConfirm) { setShowResetConfirm(false); }
@@ -3542,59 +3565,12 @@ Happy recording!`);
                 >
                   {t("fontSize")}: {fontSize}px
                 </label>
-                <div
-                  className="custom-slider"
-                  onClick={(e) => {
-                    if (e.target.classList.contains("custom-slider-thumb"))
-                      return;
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const percentage = x / rect.width;
-                    const newValue = Math.round(16 + percentage * (80 - 16));
-                    setFontSize(Math.max(16, Math.min(80, newValue)));
-                  }}
-                >
-                  <div className="custom-slider-track" />
-                  <div
-                    className="custom-slider-thumb"
-                    style={{
-                      left: `calc(${
-                        ((fontSize - 16) / (80 - 16)) * 100
-                      }% - 8px)`,
-                    }}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      const startX = e.clientX;
-                      const startValue = fontSize;
-                      const rect =
-                        e.currentTarget.parentElement.getBoundingClientRect();
-                      const maxValue = 80;
-                      const minValue = 16;
-
-                      const handleMouseMove = (moveEvent) => {
-                        const deltaX = moveEvent.clientX - startX;
-                        const deltaPercentage = deltaX / rect.width;
-                        const deltaValue =
-                          deltaPercentage * (maxValue - minValue);
-                        const newValue = Math.round(startValue + deltaValue);
-                        setFontSize(
-                          Math.max(minValue, Math.min(maxValue, newValue))
-                        );
-                      };
-
-                      const handleMouseUp = () => {
-                        document.removeEventListener(
-                          "mousemove",
-                          handleMouseMove
-                        );
-                        document.removeEventListener("mouseup", handleMouseUp);
-                      };
-
-                      document.addEventListener("mousemove", handleMouseMove);
-                      document.addEventListener("mouseup", handleMouseUp);
-                    }}
-                  />
-                </div>
+                <CustomSlider
+                  min={16}
+                  max={80}
+                  value={fontSize}
+                  onChange={setFontSize}
+                />
               </div>
 
               <div style={{ marginBottom: "20px" }}>
@@ -3607,59 +3583,12 @@ Happy recording!`);
                 >
                   {t("sidePadding")}: {sidePaddingVw}vw
                 </label>
-                <div
-                  className="custom-slider"
-                  onClick={(e) => {
-                    if (e.target.classList.contains("custom-slider-thumb"))
-                      return;
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const percentage = x / rect.width;
-                    const newValue = Math.round(0 + percentage * (40 - 0));
-                    setSidePaddingVw(Math.max(0, Math.min(40, newValue)));
-                  }}
-                >
-                  <div className="custom-slider-track" />
-                  <div
-                    className="custom-slider-thumb"
-                    style={{
-                      left: `calc(${
-                        ((sidePaddingVw - 0) / (40 - 0)) * 100
-                      }% - 8px)`,
-                    }}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      const startX = e.clientX;
-                      const startValue = sidePaddingVw;
-                      const rect =
-                        e.currentTarget.parentElement.getBoundingClientRect();
-                      const maxValue = 40;
-                      const minValue = 0;
-
-                      const handleMouseMove = (moveEvent) => {
-                        const deltaX = moveEvent.clientX - startX;
-                        const deltaPercentage = deltaX / rect.width;
-                        const deltaValue =
-                          deltaPercentage * (maxValue - minValue);
-                        const newValue = Math.round(startValue + deltaValue);
-                        setSidePaddingVw(
-                          Math.max(minValue, Math.min(maxValue, newValue))
-                        );
-                      };
-
-                      const handleMouseUp = () => {
-                        document.removeEventListener(
-                          "mousemove",
-                          handleMouseMove
-                        );
-                        document.removeEventListener("mouseup", handleMouseUp);
-                      };
-
-                      document.addEventListener("mousemove", handleMouseMove);
-                      document.addEventListener("mouseup", handleMouseUp);
-                    }}
-                  />
-                </div>
+                <CustomSlider
+                  min={0}
+                  max={40}
+                  value={sidePaddingVw}
+                  onChange={setSidePaddingVw}
+                />
               </div>
 
               {/* Text align controls removed per request */}
@@ -3799,61 +3728,13 @@ Happy recording!`);
                 >
                   {t("lineHeight")}: {lineHeight.toFixed(1)}
                 </label>
-                <div
-                  className="custom-slider"
-                  onClick={(e) => {
-                    if (e.target.classList.contains("custom-slider-thumb"))
-                      return;
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const percentage = x / rect.width;
-                    const newValue =
-                      Math.round((1 + percentage * (3 - 1)) * 10) / 10;
-                    setLineHeight(Math.max(1, Math.min(3, newValue)));
-                  }}
-                >
-                  <div className="custom-slider-track" />
-                  <div
-                    className="custom-slider-thumb"
-                    style={{
-                      left: `calc(${
-                        ((lineHeight - 1) / (3 - 1)) * 100
-                      }% - 8px)`,
-                    }}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      const startX = e.clientX;
-                      const startValue = lineHeight;
-                      const rect =
-                        e.currentTarget.parentElement.getBoundingClientRect();
-                      const maxValue = 3;
-                      const minValue = 1;
-
-                      const handleMouseMove = (moveEvent) => {
-                        const deltaX = moveEvent.clientX - startX;
-                        const deltaPercentage = deltaX / rect.width;
-                        const deltaValue =
-                          deltaPercentage * (maxValue - minValue);
-                        const newValue =
-                          Math.round((startValue + deltaValue) * 10) / 10;
-                        setLineHeight(
-                          Math.max(minValue, Math.min(maxValue, newValue))
-                        );
-                      };
-
-                      const handleMouseUp = () => {
-                        document.removeEventListener(
-                          "mousemove",
-                          handleMouseMove
-                        );
-                        document.removeEventListener("mouseup", handleMouseUp);
-                      };
-
-                      document.addEventListener("mousemove", handleMouseMove);
-                      document.addEventListener("mouseup", handleMouseUp);
-                    }}
-                  />
-                </div>
+                <CustomSlider
+                  min={1}
+                  max={3}
+                  step={0.1}
+                  value={lineHeight}
+                  onChange={setLineHeight}
+                />
               </div>
 
               <div style={{ marginBottom: "20px" }}>
@@ -3866,59 +3747,12 @@ Happy recording!`);
                 >
                   {t("paragraphSpacing")}: {paragraphSpacingPx}px
                 </label>
-                <div
-                  className="custom-slider"
-                  onClick={(e) => {
-                    if (e.target.classList.contains("custom-slider-thumb"))
-                      return;
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const percentage = x / rect.width;
-                    const newValue = Math.round(0 + percentage * (40 - 0));
-                    setParagraphSpacingPx(Math.max(0, Math.min(40, newValue)));
-                  }}
-                >
-                  <div className="custom-slider-track" />
-                  <div
-                    className="custom-slider-thumb"
-                    style={{
-                      left: `calc(${
-                        ((paragraphSpacingPx - 0) / (40 - 0)) * 100
-                      }% - 8px)`,
-                    }}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      const startX = e.clientX;
-                      const startValue = paragraphSpacingPx;
-                      const rect =
-                        e.currentTarget.parentElement.getBoundingClientRect();
-                      const maxValue = 40;
-                      const minValue = 0;
-
-                      const handleMouseMove = (moveEvent) => {
-                        const deltaX = moveEvent.clientX - startX;
-                        const deltaPercentage = deltaX / rect.width;
-                        const deltaValue =
-                          deltaPercentage * (maxValue - minValue);
-                        const newValue = Math.round(startValue + deltaValue);
-                        setParagraphSpacingPx(
-                          Math.max(minValue, Math.min(maxValue, newValue))
-                        );
-                      };
-
-                      const handleMouseUp = () => {
-                        document.removeEventListener(
-                          "mousemove",
-                          handleMouseMove
-                        );
-                        document.removeEventListener("mouseup", handleMouseUp);
-                      };
-
-                      document.addEventListener("mousemove", handleMouseMove);
-                      document.addEventListener("mouseup", handleMouseUp);
-                    }}
-                  />
-                </div>
+                <CustomSlider
+                  min={0}
+                  max={40}
+                  value={paragraphSpacingPx}
+                  onChange={setParagraphSpacingPx}
+                />
               </div>
 
               <div style={{ marginBottom: "20px" }}>
@@ -3931,59 +3765,12 @@ Happy recording!`);
                 >
                   {t("autoScrollSpeed")}: {scrollSpeed}
                 </label>
-                <div
-                  className="custom-slider"
-                  onClick={(e) => {
-                    if (e.target.classList.contains("custom-slider-thumb"))
-                      return;
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const percentage = x / rect.width;
-                    const newValue = Math.round(10 + percentage * (200 - 10));
-                    setScrollSpeed(Math.max(10, Math.min(200, newValue)));
-                  }}
-                >
-                  <div className="custom-slider-track" />
-                  <div
-                    className="custom-slider-thumb"
-                    style={{
-                      left: `calc(${
-                        ((scrollSpeed - 10) / (200 - 10)) * 100
-                      }% - 8px)`,
-                    }}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      const startX = e.clientX;
-                      const startValue = scrollSpeed;
-                      const rect =
-                        e.currentTarget.parentElement.getBoundingClientRect();
-                      const maxValue = 200;
-                      const minValue = 10;
-
-                      const handleMouseMove = (moveEvent) => {
-                        const deltaX = moveEvent.clientX - startX;
-                        const deltaPercentage = deltaX / rect.width;
-                        const deltaValue =
-                          deltaPercentage * (maxValue - minValue);
-                        const newValue = Math.round(startValue + deltaValue);
-                        setScrollSpeed(
-                          Math.max(minValue, Math.min(maxValue, newValue))
-                        );
-                      };
-
-                      const handleMouseUp = () => {
-                        document.removeEventListener(
-                          "mousemove",
-                          handleMouseMove
-                        );
-                        document.removeEventListener("mouseup", handleMouseUp);
-                      };
-
-                      document.addEventListener("mousemove", handleMouseMove);
-                      document.addEventListener("mouseup", handleMouseUp);
-                    }}
-                  />
-                </div>
+                <CustomSlider
+                  min={10}
+                  max={200}
+                  value={scrollSpeed}
+                  onChange={setScrollSpeed}
+                />
               </div>
 
               <div style={{ marginBottom: "20px" }}>
@@ -3996,62 +3783,12 @@ Happy recording!`);
                 >
                   {t("lookaheadWindow")}: {lookaheadWindow} {t("words")}
                 </label>
-                <div
-                  className="custom-slider"
-                  onClick={(e) => {
-                    if (e.target.classList.contains("custom-slider-thumb"))
-                      return;
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const percentage = x / rect.width;
-                    const newValue = Math.round(1 + percentage * (40 - 1));
-                    setLookaheadWindow(Math.max(1, Math.min(40, newValue)));
-                  }}
-                >
-                  <div className="custom-slider-track" />
-                  <div
-                    className="custom-slider-thumb"
-                    style={{
-                      left: `calc(${
-                        ((lookaheadWindow - 1) / (40 - 1)) * 100
-                      }% - 8px)`,
-                    }}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      const startX = e.clientX;
-                      const startValue = lookaheadWindow;
-                      const rect =
-                        e.currentTarget.parentElement.getBoundingClientRect();
-                      // Max raised 20 -> 40 (GitHub #2): lets tracking skip
-                      // over a co-host's lines. Safe because far jumps still
-                      // require a 2-3 word exact match (see tryAdvanceByTokens)
-                      const maxValue = 40;
-                      const minValue = 1;
-
-                      const handleMouseMove = (moveEvent) => {
-                        const deltaX = moveEvent.clientX - startX;
-                        const deltaPercentage = deltaX / rect.width;
-                        const deltaValue =
-                          deltaPercentage * (maxValue - minValue);
-                        const newValue = Math.round(startValue + deltaValue);
-                        setLookaheadWindow(
-                          Math.max(minValue, Math.min(maxValue, newValue))
-                        );
-                      };
-
-                      const handleMouseUp = () => {
-                        document.removeEventListener(
-                          "mousemove",
-                          handleMouseMove
-                        );
-                        document.removeEventListener("mouseup", handleMouseUp);
-                      };
-
-                      document.addEventListener("mousemove", handleMouseMove);
-                      document.addEventListener("mouseup", handleMouseUp);
-                    }}
-                  />
-                </div>
+                <CustomSlider
+                  min={1}
+                  max={40}
+                  value={lookaheadWindow}
+                  onChange={setLookaheadWindow}
+                />
                 <div
                   style={{ color: "#aaa", fontSize: "12px", marginTop: "4px" }}
                 >
@@ -4102,61 +3839,13 @@ Happy recording!`);
                 >
                   {t("textOpacity")}: {Math.round(textOpacity * 100)}%
                 </label>
-                <div
-                  className="custom-slider"
-                  onClick={(e) => {
-                    if (e.target.classList.contains("custom-slider-thumb"))
-                      return;
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const percentage = x / rect.width;
-                    const newValue =
-                      Math.round((0.2 + percentage * (1 - 0.2)) * 20) / 20;
-                    setTextOpacity(Math.max(0.2, Math.min(1, newValue)));
-                  }}
-                >
-                  <div className="custom-slider-track" />
-                  <div
-                    className="custom-slider-thumb"
-                    style={{
-                      left: `calc(${
-                        ((textOpacity - 0.2) / (1 - 0.2)) * 100
-                      }% - 8px)`,
-                    }}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      const startX = e.clientX;
-                      const startValue = textOpacity;
-                      const rect =
-                        e.currentTarget.parentElement.getBoundingClientRect();
-                      const maxValue = 1;
-                      const minValue = 0.2;
-
-                      const handleMouseMove = (moveEvent) => {
-                        const deltaX = moveEvent.clientX - startX;
-                        const deltaPercentage = deltaX / rect.width;
-                        const deltaValue =
-                          deltaPercentage * (maxValue - minValue);
-                        const newValue =
-                          Math.round((startValue + deltaValue) * 20) / 20;
-                        setTextOpacity(
-                          Math.max(minValue, Math.min(maxValue, newValue))
-                        );
-                      };
-
-                      const handleMouseUp = () => {
-                        document.removeEventListener(
-                          "mousemove",
-                          handleMouseMove
-                        );
-                        document.removeEventListener("mouseup", handleMouseUp);
-                      };
-
-                      document.addEventListener("mousemove", handleMouseMove);
-                      document.addEventListener("mouseup", handleMouseUp);
-                    }}
-                  />
-                </div>
+                <CustomSlider
+                  min={0.2}
+                  max={1}
+                  step={0.05}
+                  value={textOpacity}
+                  onChange={setTextOpacity}
+                />
               </div>
 
               <div style={{ marginBottom: "20px" }}>
@@ -4169,61 +3858,13 @@ Happy recording!`);
                 >
                   {t("aimOpacity")}: {Math.round(aimOpacity * 100)}%
                 </label>
-                <div
-                  className="custom-slider"
-                  onClick={(e) => {
-                    if (e.target.classList.contains("custom-slider-thumb"))
-                      return;
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const percentage = x / rect.width;
-                    const newValue =
-                      Math.round((0 + percentage * (1 - 0)) * 20) / 20;
-                    setAimOpacity(Math.max(0, Math.min(1, newValue)));
-                  }}
-                >
-                  <div className="custom-slider-track" />
-                  <div
-                    className="custom-slider-thumb"
-                    style={{
-                      left: `calc(${
-                        ((aimOpacity - 0) / (1 - 0)) * 100
-                      }% - 8px)`,
-                    }}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      const startX = e.clientX;
-                      const startValue = aimOpacity;
-                      const rect =
-                        e.currentTarget.parentElement.getBoundingClientRect();
-                      const maxValue = 1;
-                      const minValue = 0;
-
-                      const handleMouseMove = (moveEvent) => {
-                        const deltaX = moveEvent.clientX - startX;
-                        const deltaPercentage = deltaX / rect.width;
-                        const deltaValue =
-                          deltaPercentage * (maxValue - minValue);
-                        const newValue =
-                          Math.round((startValue + deltaValue) * 20) / 20;
-                        setAimOpacity(
-                          Math.max(minValue, Math.min(maxValue, newValue))
-                        );
-                      };
-
-                      const handleMouseUp = () => {
-                        document.removeEventListener(
-                          "mousemove",
-                          handleMouseMove
-                        );
-                        document.removeEventListener("mouseup", handleMouseUp);
-                      };
-
-                      document.addEventListener("mousemove", handleMouseMove);
-                      document.addEventListener("mouseup", handleMouseUp);
-                    }}
-                  />
-                </div>
+                <CustomSlider
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={aimOpacity}
+                  onChange={setAimOpacity}
+                />
               </div>
 
               <div style={{ marginBottom: "20px" }}>
@@ -4237,63 +3878,13 @@ Happy recording!`);
                   {t("paragraphHighlightOpacity")}:{" "}
                   {Math.round(paragraphHighlightOpacity * 100)}%
                 </label>
-                <div
-                  className="custom-slider"
-                  onClick={(e) => {
-                    if (e.target.classList.contains("custom-slider-thumb"))
-                      return;
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const percentage = x / rect.width;
-                    const newValue =
-                      Math.round((0 + percentage * (0.6 - 0)) * 50) / 50;
-                    setParagraphHighlightOpacity(
-                      Math.max(0, Math.min(0.6, newValue))
-                    );
-                  }}
-                >
-                  <div className="custom-slider-track" />
-                  <div
-                    className="custom-slider-thumb"
-                    style={{
-                      left: `${
-                        ((paragraphHighlightOpacity - 0) / (0.6 - 0)) * 100
-                      }%`,
-                    }}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      const startX = e.clientX;
-                      const startValue = paragraphHighlightOpacity;
-                      const rect =
-                        e.currentTarget.parentElement.getBoundingClientRect();
-                      const maxValue = 0.6;
-                      const minValue = 0;
-
-                      const handleMouseMove = (moveEvent) => {
-                        const deltaX = moveEvent.clientX - startX;
-                        const deltaPercentage = deltaX / rect.width;
-                        const deltaValue =
-                          deltaPercentage * (maxValue - minValue);
-                        const newValue =
-                          Math.round((startValue + deltaValue) * 50) / 50;
-                        setParagraphHighlightOpacity(
-                          Math.max(minValue, Math.min(maxValue, newValue))
-                        );
-                      };
-
-                      const handleMouseUp = () => {
-                        document.removeEventListener(
-                          "mousemove",
-                          handleMouseMove
-                        );
-                        document.removeEventListener("mouseup", handleMouseUp);
-                      };
-
-                      document.addEventListener("mousemove", handleMouseMove);
-                      document.addEventListener("mouseup", handleMouseUp);
-                    }}
-                  />
-                </div>
+                <CustomSlider
+                  min={0}
+                  max={0.6}
+                  step={0.02}
+                  value={paragraphHighlightOpacity}
+                  onChange={setParagraphHighlightOpacity}
+                />
               </div>
 
               <div style={{ marginBottom: "20px" }}>
@@ -4306,61 +3897,13 @@ Happy recording!`);
                 >
                   {t("operationButtonsOpacity")}: {Math.round(uiOpacity * 100)}%
                 </label>
-                <div
-                  className="custom-slider"
-                  onClick={(e) => {
-                    if (e.target.classList.contains("custom-slider-thumb"))
-                      return;
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const percentage = x / rect.width;
-                    const newValue =
-                      Math.round((0.2 + percentage * (1 - 0.2)) * 20) / 20;
-                    setUiOpacity(Math.max(0.2, Math.min(1, newValue)));
-                  }}
-                >
-                  <div className="custom-slider-track" />
-                  <div
-                    className="custom-slider-thumb"
-                    style={{
-                      left: `calc(${
-                        ((uiOpacity - 0.2) / (1 - 0.2)) * 100
-                      }% - 8px)`,
-                    }}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      const startX = e.clientX;
-                      const startValue = uiOpacity;
-                      const rect =
-                        e.currentTarget.parentElement.getBoundingClientRect();
-                      const maxValue = 1;
-                      const minValue = 0.2;
-
-                      const handleMouseMove = (moveEvent) => {
-                        const deltaX = moveEvent.clientX - startX;
-                        const deltaPercentage = deltaX / rect.width;
-                        const deltaValue =
-                          deltaPercentage * (maxValue - minValue);
-                        const newValue =
-                          Math.round((startValue + deltaValue) * 20) / 20;
-                        setUiOpacity(
-                          Math.max(minValue, Math.min(maxValue, newValue))
-                        );
-                      };
-
-                      const handleMouseUp = () => {
-                        document.removeEventListener(
-                          "mousemove",
-                          handleMouseMove
-                        );
-                        document.removeEventListener("mouseup", handleMouseUp);
-                      };
-
-                      document.addEventListener("mousemove", handleMouseMove);
-                      document.addEventListener("mouseup", handleMouseUp);
-                    }}
-                  />
-                </div>
+                <CustomSlider
+                  min={0.2}
+                  max={1}
+                  step={0.05}
+                  value={uiOpacity}
+                  onChange={setUiOpacity}
+                />
               </div>
 
               <div style={{ marginBottom: "20px" }}>
@@ -4482,69 +4025,12 @@ Happy recording!`);
                     >
                       {t("horizontalOffset")}: {aimOffsetX}px
                     </label>
-                    <div
-                      className="custom-slider"
-                      onClick={(e) => {
-                        if (e.target.classList.contains("custom-slider-thumb"))
-                          return;
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        const x = e.clientX - rect.left;
-                        const percentage = x / rect.width;
-                        const newValue = Math.round(
-                          -400 + percentage * (400 - -400)
-                        );
-                        setAimOffsetX(Math.max(-400, Math.min(400, newValue)));
-                      }}
-                    >
-                      <div className="custom-slider-track" />
-                      <div
-                        className="custom-slider-thumb"
-                        style={{
-                          left: `calc(${
-                            ((aimOffsetX - -400) / (400 - -400)) * 100
-                          }% - 8px)`,
-                        }}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          const startX = e.clientX;
-                          const startValue = aimOffsetX;
-                          const rect =
-                            e.currentTarget.parentElement.getBoundingClientRect();
-                          const maxValue = 400;
-                          const minValue = -400;
-
-                          const handleMouseMove = (moveEvent) => {
-                            const deltaX = moveEvent.clientX - startX;
-                            const deltaPercentage = deltaX / rect.width;
-                            const deltaValue =
-                              deltaPercentage * (maxValue - minValue);
-                            const newValue = Math.round(
-                              startValue + deltaValue
-                            );
-                            setAimOffsetX(
-                              Math.max(minValue, Math.min(maxValue, newValue))
-                            );
-                          };
-
-                          const handleMouseUp = () => {
-                            document.removeEventListener(
-                              "mousemove",
-                              handleMouseMove
-                            );
-                            document.removeEventListener(
-                              "mouseup",
-                              handleMouseUp
-                            );
-                          };
-
-                          document.addEventListener(
-                            "mousemove",
-                            handleMouseMove
-                          );
-                          document.addEventListener("mouseup", handleMouseUp);
-                        }}
-                      />
-                    </div>
+                    <CustomSlider
+                      min={-400}
+                      max={400}
+                      value={aimOffsetX}
+                      onChange={setAimOffsetX}
+                    />
                   </div>
                   <div style={{ flex: 1 }}>
                     <label
@@ -4556,69 +4042,12 @@ Happy recording!`);
                     >
                       {t("verticalOffset")}: {aimOffsetY}px
                     </label>
-                    <div
-                      className="custom-slider"
-                      onClick={(e) => {
-                        if (e.target.classList.contains("custom-slider-thumb"))
-                          return;
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        const x = e.clientX - rect.left;
-                        const percentage = x / rect.width;
-                        const newValue = Math.round(
-                          -300 + percentage * (300 - -300)
-                        );
-                        setAimOffsetY(Math.max(-300, Math.min(300, newValue)));
-                      }}
-                    >
-                      <div className="custom-slider-track" />
-                      <div
-                        className="custom-slider-thumb"
-                        style={{
-                          left: `calc(${
-                            ((aimOffsetY - -300) / (300 - -300)) * 100
-                          }% - 8px)`,
-                        }}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          const startX = e.clientX;
-                          const startValue = aimOffsetY;
-                          const rect =
-                            e.currentTarget.parentElement.getBoundingClientRect();
-                          const maxValue = 300;
-                          const minValue = -300;
-
-                          const handleMouseMove = (moveEvent) => {
-                            const deltaX = moveEvent.clientX - startX;
-                            const deltaPercentage = deltaX / rect.width;
-                            const deltaValue =
-                              deltaPercentage * (maxValue - minValue);
-                            const newValue = Math.round(
-                              startValue + deltaValue
-                            );
-                            setAimOffsetY(
-                              Math.max(minValue, Math.min(maxValue, newValue))
-                            );
-                          };
-
-                          const handleMouseUp = () => {
-                            document.removeEventListener(
-                              "mousemove",
-                              handleMouseMove
-                            );
-                            document.removeEventListener(
-                              "mouseup",
-                              handleMouseUp
-                            );
-                          };
-
-                          document.addEventListener(
-                            "mousemove",
-                            handleMouseMove
-                          );
-                          document.addEventListener("mouseup", handleMouseUp);
-                        }}
-                      />
-                    </div>
+                    <CustomSlider
+                      min={-300}
+                      max={300}
+                      value={aimOffsetY}
+                      onChange={setAimOffsetY}
+                    />
                   </div>
                 </div>
                 <button
@@ -4717,63 +4146,14 @@ Happy recording!`);
                 >
                   {t("textCenteringOffset")}: {centerPaddingVh}vh
                 </label>
-                <div
-                  className="custom-slider"
-                  onClick={(e) => {
-                    if (e.target.classList.contains("custom-slider-thumb"))
-                      return;
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const percentage = x / rect.width;
-                    const newValue = Math.round(20 + percentage * (60 - 20));
-                    setCenterPaddingVh(Math.max(20, Math.min(60, newValue)));
-                  }}
-                  onMouseDown={() => setShowCenterLine(true)}
-                  onMouseUp={() => setShowCenterLine(false)}
-                >
-                  <div className="custom-slider-track" />
-                  <div
-                    className="custom-slider-thumb"
-                    style={{
-                      left: `calc(${
-                        ((centerPaddingVh - 20) / (60 - 20)) * 100
-                      }% - 8px)`,
-                    }}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      setShowCenterLine(true);
-                      const startX = e.clientX;
-                      const startValue = centerPaddingVh;
-                      const rect =
-                        e.currentTarget.parentElement.getBoundingClientRect();
-                      const maxValue = 60;
-                      const minValue = 20;
-
-                      const handleMouseMove = (moveEvent) => {
-                        const deltaX = moveEvent.clientX - startX;
-                        const deltaPercentage = deltaX / rect.width;
-                        const deltaValue =
-                          deltaPercentage * (maxValue - minValue);
-                        const newValue = Math.round(startValue + deltaValue);
-                        setCenterPaddingVh(
-                          Math.max(minValue, Math.min(maxValue, newValue))
-                        );
-                      };
-
-                      const handleMouseUp = () => {
-                        setShowCenterLine(false);
-                        document.removeEventListener(
-                          "mousemove",
-                          handleMouseMove
-                        );
-                        document.removeEventListener("mouseup", handleMouseUp);
-                      };
-
-                      document.addEventListener("mousemove", handleMouseMove);
-                      document.addEventListener("mouseup", handleMouseUp);
-                    }}
-                  />
-                </div>
+                <CustomSlider
+                  min={20}
+                  max={60}
+                  value={centerPaddingVh}
+                  onChange={setCenterPaddingVh}
+                  onDragStart={() => setShowCenterLine(true)}
+                  onDragEnd={() => setShowCenterLine(false)}
+                />
               </div>
 
               <div style={{ marginBottom: "20px" }}>
@@ -5181,6 +4561,107 @@ Happy recording!`);
                 }}
               >
                 {t("delete")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import Shared Script Confirmation Modal */}
+      {pendingSharedScript && (
+        <div
+          onClick={() => setPendingSharedScript(null)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.8)",
+            zIndex: 21000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#111",
+              border: "2px solid rgba(255,255,255,0.15)",
+              borderRadius: "16px",
+              padding: "32px",
+              maxWidth: "400px",
+              width: "calc(100vw - 40px)",
+              boxShadow: "0 16px 48px rgba(0,0,0,0.6)",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: "40px", marginBottom: "16px" }}>🔗</div>
+            <h2
+              style={{
+                color: "white",
+                margin: "0 0 12px",
+                fontSize: "20px",
+              }}
+            >
+              {t("importSharedScriptTitle")}
+            </h2>
+            <p
+              style={{
+                color: "#aaa",
+                fontSize: "14px",
+                lineHeight: "1.5",
+                margin: "0 0 8px",
+              }}
+            >
+              {t("importSharedScriptBody")}
+            </p>
+            <p
+              style={{
+                color: "white",
+                fontSize: "15px",
+                fontWeight: "bold",
+                margin: "0 0 24px",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              "{pendingSharedScript.name}"
+            </p>
+            <div
+              style={{ display: "flex", gap: "12px", justifyContent: "center" }}
+            >
+              <button
+                onClick={() => setPendingSharedScript(null)}
+                style={{
+                  padding: "10px 24px",
+                  borderRadius: "8px",
+                  border: "1px solid #555",
+                  background: "#333",
+                  color: "white",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  fontSize: "14px",
+                }}
+              >
+                {t("cancel")}
+              </button>
+              <button
+                onClick={confirmImportSharedScript}
+                style={{
+                  padding: "10px 24px",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: "#2e7d32",
+                  color: "white",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  fontSize: "14px",
+                }}
+              >
+                {t("importSharedScriptConfirm")}
               </button>
             </div>
           </div>
