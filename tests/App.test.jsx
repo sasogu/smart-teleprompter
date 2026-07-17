@@ -77,4 +77,18 @@ describe("SmartTeleprompter", () => {
     expect(container.querySelector('button[aria-label="Buy Me a Coffee"]')).toBeNull();
     expect(container.textContent).not.toContain("Enjoying Smart Teleprompter?");
   });
+
+  it("can switch the prompter interface to Spanish", () => {
+    const { container } = render(<SmartTeleprompter />);
+    fireEvent.click(container.querySelector('button[aria-label="Settings"]'));
+    fireEvent.click(
+      Array.from(container.querySelectorAll("button")).find(
+        (button) => button.textContent === "Español"
+      )
+    );
+
+    expect(container.textContent).toContain("Ajustes");
+    expect(container.textContent).toContain("Idioma de la interfaz");
+    expect(container.textContent).toContain("Restablecer ajustes");
+  });
 });

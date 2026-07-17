@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The Script Editor now exposes the existing `.txt`/`.md`/`.markdown` file import control through an Import button.
 - Voice recognition now shows visible microphone diagnostics instead of silently restarting when Chrome reports no speech, missing microphone input, blocked permissions, or speech service errors.
 - Settings now include a Support prompts toggle that hides Buy Me a Coffee buttons and support messages across the app and landing page.
+- The teleprompter app now has an interface language setting for English and Spanish, independent from the speech-recognition language.
 
 ## [2.2.0] - 2026-07-02
 

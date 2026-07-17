@@ -48,13 +48,13 @@ const CO_HOST_LINE_RE = /^\s*(>>|@[^\s:]{1,30}:)/;
 
 const DEFAULT_LINE_STYLE = { type: "paragraph", depth: 0 };
 
-const SPEECH_ERROR_MESSAGES = {
-  "no-speech": "Still listening. Start speaking when ready.",
-  "audio-capture": "No microphone input detected. Check Chrome microphone settings.",
-  network: "Speech recognition service unavailable. Check internet access or Chrome speech service settings.",
-  "not-allowed": "Microphone permission is blocked for this site.",
-  "service-not-allowed": "Chrome blocked the speech recognition service for this site.",
-  aborted: "Speech recognition stopped.",
+const SPEECH_ERROR_KEYS = {
+  "no-speech": "micStillListening",
+  "audio-capture": "micNoInput",
+  network: "micServiceUnavailable",
+  "not-allowed": "micPermissionBlocked",
+  "service-not-allowed": "micServiceBlocked",
+  aborted: "micStopped",
 };
 
 const FATAL_SPEECH_ERRORS = new Set([
@@ -65,6 +65,304 @@ const FATAL_SPEECH_ERRORS = new Set([
 ]);
 
 const SUPPORT_PROMPTS_KEY = "smartTeleprompterShowSupportPrompts";
+const UI_LANGUAGE_KEY = "smartTeleprompterUiLanguage";
+
+const UI_TEXT = {
+  en: {
+    uiLanguage: "Interface language",
+    english: "English",
+    spanish: "Español",
+    microphone: "Microphone",
+    microphoneTip: "Start/Stop speech recognition",
+    language: "Speech language",
+    languageTip: "Select speech recognition language",
+    mirror: "Mirror horizontally",
+    mirrorTip: "Flip text horizontally",
+    autoScroll: "Auto Scroll",
+    playPause: "Play/Pause",
+    wordHighlight: "Word highlight",
+    hideHighlight: "Hide highlight",
+    showHighlight: "Show highlight",
+    reset: "Reset",
+    resetTip: "Go to start and stop modes",
+    scriptEditor: "Script Editor",
+    scriptEditorTip: "Toggle script editor",
+    settings: "Settings",
+    settingsTip: "Open configuration",
+    fullscreen: "Fullscreen",
+    enterFullscreen: "Enter fullscreen",
+    exitFullscreen: "Exit fullscreen",
+    keyboardShortcuts: "Keyboard Shortcuts",
+    keyboardShortcutsTip: "Show all keyboard shortcuts",
+    backHome: "Back to Homepage",
+    backHomeTip: "Return to the main website",
+    close: "Close",
+    import: "Import",
+    copy: "Copy",
+    clear: "Clear",
+    copied: "Text copied to clipboard!",
+    clearConfirm: "Are you sure you want to clear all text?",
+    myScripts: "My Scripts",
+    addScript: "Add Script",
+    noSavedScripts: "No saved scripts yet.",
+    words: "words",
+    load: "Load",
+    edit: "Edit",
+    share: "Share",
+    shareBusy: "…",
+    resetSettings: "Reset Settings",
+    fontSize: "Font size",
+    sidePadding: "Side padding",
+    textAlign: "Text align",
+    left: "Left",
+    center: "Center",
+    right: "Right",
+    margin: "Margin",
+    lineHeight: "Line height",
+    paragraphSpacing: "Paragraph spacing",
+    scrollSpeed: "Scroll speed",
+    autoScrollSpeed: "Auto-scroll speed",
+    lookaheadWindow: "Lookahead window",
+    coHostLines: "Co-host lines",
+    skip: "Skip",
+    off: "Off",
+    enable: "Enable",
+    coHostLinesTitle:
+      'Lines starting with ">>" or "@Name:" are dimmed and voice tracking jumps over them',
+    coHostLinesHelp:
+      "Start a line with >> or @Name: to mark it as another speaker's — it shows dimmed and voice tracking skips it",
+    lookaheadHelp:
+      "Increase if voice tracking feels slow (recommended: 12-15 for English, 8-10 for Greek)",
+    followCurrentWord: "Follow current word",
+    enabled: "Enabled",
+    disabled: "Disabled",
+    textOpacity: "Text opacity",
+    aimOpacity: "Aim opacity",
+    paragraphHighlightOpacity: "Paragraph highlight opacity",
+    operationButtonsOpacity: "Operation buttons opacity",
+    showAimMarker: "Show aim marker",
+    aimMarkerStyle: "Aim marker style",
+    crosshair: "Crosshair",
+    dot: "Dot",
+    frame: "Frame",
+    aimMarkerColor: "Aim marker color",
+    horizontalOffset: "Horizontal offset",
+    verticalOffset: "Vertical offset",
+    resetToCenter: "Reset to Center",
+    listeningIndicator: '"Listening" indicator',
+    visible: "Visible",
+    hidden: "Hidden",
+    hideWhileRecording: "Hide while recording",
+    show: "Show",
+    supportPrompts: "Support prompts",
+    hideEverywhere: "Hide everywhere",
+    textCenteringOffset: "Text centering offset (top/bottom)",
+    backgroundColor: "Background color",
+    textColor: "Text color",
+    highlightColor: "Highlight color",
+    listening: "Listening...",
+    microphoneStatus: "Microphone status",
+    iosLimitation: "iOS Limitation",
+    iosSpeechUnavailable: "Speech recognition doesn't work on iOS devices.",
+    iosAutoPlayOnly: "Only Auto Play mode is available.",
+    deleteScriptTitle: "Delete Script?",
+    deleteScriptPrompt: "Are you sure you want to delete",
+    cancel: "Cancel",
+    delete: "Delete",
+    addScriptTitle: "Add Script",
+    editScriptTitle: "Edit Script",
+    scriptName: "Script name",
+    scriptNamePlaceholder: "e.g. Episode 1 intro...",
+    scriptNameRequired: "Please enter a script name.",
+    scriptText: "Script text",
+    scriptTextPlaceholder: "Paste or type your script here...",
+    scriptTextRequired: "Please enter the script text.",
+    coHostTip:
+      "Recording with a co-host? Start their lines with >> or @Name: — they'll appear dimmed and voice tracking will skip to your next line automatically.",
+    save: "Save",
+    saveAndLoad: "Save & Load",
+    resetAllSettingsTitle: "Reset All Settings?",
+    resetAllSettingsBody:
+      "This will restore all settings to their defaults: font size, colors, speed, language, and layout. Your script text will not be affected.",
+    shortcutsStartStopMic: "Start / Stop microphone",
+    shortcutsAutoScroll: "Play / Pause auto-scroll",
+    shortcutsHighlight: "Toggle word highlighting",
+    shortcutsReset: "Reset to beginning",
+    shortcutsLanguage: "Language selection",
+    shortcutsSettings: "Settings menu",
+    shortcutsEditor: "Script editor",
+    shortcutsMyScripts: "My Scripts (in editor)",
+    shortcutsFullscreen: "Fullscreen mode",
+    shortcutsMirror: "Mirror text horizontally",
+    shortcutsPanel: "Show this panel",
+    supportTitle: "Enjoying Smart Teleprompter?",
+    supportBody: "Support development with a coffee",
+    buyMeCoffee: "Buy Me a Coffee",
+    supportedFileTypes: "Supported file types: .txt, .md",
+    fileLoadFailed: "Failed to load file",
+    openFile: "Open File",
+    importFileTip: "Import .txt/.md",
+    micStarting: "Starting speech recognition...",
+    micListening: "Listening. Start speaking when ready.",
+    micDetected: "Speech detected. Matching script...",
+    micStillListening: "Still listening. Start speaking when ready.",
+    micNoInput: "No microphone input detected. Check Chrome microphone settings.",
+    micServiceUnavailable:
+      "Speech recognition service unavailable. Check internet access or Chrome speech service settings.",
+    micPermissionBlocked: "Microphone permission is blocked for this site.",
+    micServiceBlocked: "Chrome blocked the speech recognition service for this site.",
+    micStopped: "Speech recognition stopped.",
+    micUnknownError: "Speech recognition error",
+    checkConsole: "Check Chrome console for details.",
+  },
+  es: {
+    uiLanguage: "Idioma de la interfaz",
+    english: "English",
+    spanish: "Español",
+    microphone: "Micrófono",
+    microphoneTip: "Iniciar/detener reconocimiento de voz",
+    language: "Idioma de reconocimiento",
+    languageTip: "Seleccionar idioma del reconocimiento de voz",
+    mirror: "Espejo horizontal",
+    mirrorTip: "Invertir el texto horizontalmente",
+    autoScroll: "Autoavance",
+    playPause: "Reproducir/pausar",
+    wordHighlight: "Resaltado de palabras",
+    hideHighlight: "Ocultar resaltado",
+    showHighlight: "Mostrar resaltado",
+    reset: "Reiniciar",
+    resetTip: "Volver al inicio y detener modos",
+    scriptEditor: "Editor del guion",
+    scriptEditorTip: "Mostrar/ocultar editor del guion",
+    settings: "Ajustes",
+    settingsTip: "Abrir configuración",
+    fullscreen: "Pantalla completa",
+    enterFullscreen: "Entrar en pantalla completa",
+    exitFullscreen: "Salir de pantalla completa",
+    keyboardShortcuts: "Atajos de teclado",
+    keyboardShortcutsTip: "Mostrar todos los atajos",
+    backHome: "Volver al inicio",
+    backHomeTip: "Volver a la página principal",
+    close: "Cerrar",
+    import: "Importar",
+    copy: "Copiar",
+    clear: "Borrar",
+    copied: "Texto copiado al portapapeles.",
+    clearConfirm: "¿Seguro que quieres borrar todo el texto?",
+    myScripts: "Mis guiones",
+    addScript: "Añadir guion",
+    noSavedScripts: "No hay guiones guardados.",
+    words: "palabras",
+    load: "Cargar",
+    edit: "Editar",
+    share: "Compartir",
+    shareBusy: "…",
+    resetSettings: "Restablecer ajustes",
+    fontSize: "Tamaño de letra",
+    sidePadding: "Margen lateral",
+    textAlign: "Alineación del texto",
+    left: "Izquierda",
+    center: "Centro",
+    right: "Derecha",
+    margin: "Margen",
+    lineHeight: "Altura de línea",
+    paragraphSpacing: "Espaciado entre párrafos",
+    scrollSpeed: "Velocidad de avance",
+    autoScrollSpeed: "Velocidad de autoavance",
+    lookaheadWindow: "Ventana de anticipación",
+    coHostLines: "Líneas de co-presentador",
+    skip: "Saltar",
+    off: "Desactivado",
+    enable: "Activar",
+    coHostLinesTitle:
+      'Las líneas que empiezan por ">>" o "@Nombre:" se atenúan y el seguimiento de voz las salta',
+    coHostLinesHelp:
+      "Empieza una línea con >> o @Nombre: para marcarla como otra persona: se verá atenuada y el seguimiento de voz la saltará",
+    lookaheadHelp:
+      "Auméntalo si el seguimiento va lento (recomendado: 12-15 para inglés, 8-10 para griego)",
+    followCurrentWord: "Seguir palabra actual",
+    enabled: "Activado",
+    disabled: "Desactivado",
+    textOpacity: "Opacidad del texto",
+    aimOpacity: "Opacidad del marcador",
+    paragraphHighlightOpacity: "Opacidad del resaltado de párrafo",
+    operationButtonsOpacity: "Opacidad de los botones",
+    showAimMarker: "Mostrar marcador de lectura",
+    aimMarkerStyle: "Estilo del marcador",
+    crosshair: "Cruz",
+    dot: "Punto",
+    frame: "Marco",
+    aimMarkerColor: "Color del marcador",
+    horizontalOffset: "Desplazamiento horizontal",
+    verticalOffset: "Desplazamiento vertical",
+    resetToCenter: "Centrar",
+    listeningIndicator: 'Indicador "Escuchando"',
+    visible: "Visible",
+    hidden: "Oculto",
+    hideWhileRecording: "Ocultar al grabar",
+    show: "Mostrar",
+    supportPrompts: "Avisos de soporte",
+    hideEverywhere: "Ocultar en todas partes",
+    textCenteringOffset: "Centrado del texto (arriba/abajo)",
+    backgroundColor: "Color de fondo",
+    textColor: "Color del texto",
+    highlightColor: "Color del resaltado",
+    listening: "Escuchando...",
+    microphoneStatus: "Estado del micrófono",
+    iosLimitation: "Limitación en iOS",
+    iosSpeechUnavailable: "El reconocimiento de voz no funciona en dispositivos iOS.",
+    iosAutoPlayOnly: "Solo está disponible el modo Autoavance.",
+    deleteScriptTitle: "¿Eliminar guion?",
+    deleteScriptPrompt: "¿Seguro que quieres eliminar",
+    cancel: "Cancelar",
+    delete: "Eliminar",
+    addScriptTitle: "Añadir guion",
+    editScriptTitle: "Editar guion",
+    scriptName: "Nombre del guion",
+    scriptNamePlaceholder: "p. ej. Intro episodio 1...",
+    scriptNameRequired: "Introduce un nombre para el guion.",
+    scriptText: "Texto del guion",
+    scriptTextPlaceholder: "Pega o escribe aquí tu guion...",
+    scriptTextRequired: "Introduce el texto del guion.",
+    coHostTip:
+      "¿Grabas con otra persona? Empieza sus líneas con >> o @Nombre: — aparecerán atenuadas y el seguimiento de voz saltará automáticamente a tu siguiente línea.",
+    save: "Guardar",
+    saveAndLoad: "Guardar y cargar",
+    resetAllSettingsTitle: "¿Restablecer todos los ajustes?",
+    resetAllSettingsBody:
+      "Esto restaurará los ajustes por defecto: tamaño de letra, colores, velocidad, idioma y diseño. El texto del guion no se modificará.",
+    shortcutsStartStopMic: "Iniciar / detener micrófono",
+    shortcutsAutoScroll: "Reproducir / pausar autoavance",
+    shortcutsHighlight: "Activar/desactivar resaltado",
+    shortcutsReset: "Volver al inicio",
+    shortcutsLanguage: "Selección de idioma",
+    shortcutsSettings: "Menú de ajustes",
+    shortcutsEditor: "Editor del guion",
+    shortcutsMyScripts: "Mis guiones (en el editor)",
+    shortcutsFullscreen: "Pantalla completa",
+    shortcutsMirror: "Espejo horizontal",
+    shortcutsPanel: "Mostrar este panel",
+    supportTitle: "¿Te gusta Smart Teleprompter?",
+    supportBody: "Apoya el desarrollo con un café",
+    buyMeCoffee: "Invítame a un café",
+    supportedFileTypes: "Tipos de archivo admitidos: .txt, .md",
+    fileLoadFailed: "No se pudo cargar el archivo",
+    openFile: "Abrir archivo",
+    importFileTip: "Importar .txt/.md",
+    micStarting: "Iniciando reconocimiento de voz...",
+    micListening: "Escuchando. Empieza a hablar cuando quieras.",
+    micDetected: "Voz detectada. Buscando coincidencia en el guion...",
+    micStillListening: "Sigo escuchando. Empieza a hablar cuando quieras.",
+    micNoInput: "No se detecta entrada del micrófono. Revisa los ajustes de Chrome.",
+    micServiceUnavailable:
+      "El servicio de reconocimiento de voz no está disponible. Revisa la conexión o los ajustes de voz de Chrome.",
+    micPermissionBlocked: "El permiso de micrófono está bloqueado para este sitio.",
+    micServiceBlocked: "Chrome ha bloqueado el servicio de reconocimiento de voz para este sitio.",
+    micStopped: "Reconocimiento de voz detenido.",
+    micUnknownError: "Error de reconocimiento de voz",
+    checkConsole: "Revisa la consola de Chrome para más detalles.",
+  },
+};
 
 function cleanMarkdownInline(input) {
   return input
@@ -490,7 +788,15 @@ Happy recording!`);
       return true;
     }
   });
+  const [uiLanguage, setUiLanguage] = useState(() => {
+    try {
+      return localStorage.getItem(UI_LANGUAGE_KEY) === "es" ? "es" : "en";
+    } catch (_) {
+      return "en";
+    }
+  });
   const [isIOSChrome, setIsIOSChrome] = useState(false);
+  const t = (key) => UI_TEXT[uiLanguage]?.[key] || UI_TEXT.en[key] || key;
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const languagesList = [
@@ -624,7 +930,7 @@ Happy recording!`);
     rec.onstart = () => {
       recognizingRef.current = true;
       micForceStoppedRef && (micForceStoppedRef.current = false);
-      updateMicStatus("Listening. Start speaking when ready.");
+      updateMicStatus(t("micListening"));
     };
 
     rec.onresult = (event) => {
@@ -646,7 +952,7 @@ Happy recording!`);
       // Split σε tokens ΑΜΑ υπάρχει τουλάχιστον μία λέξη
       const tokens = transcript.split(/\s+/).map(normalizeWord).filter(Boolean);
       if (tokens.length === 0) return;
-      updateMicStatus("Speech detected. Matching script...");
+      updateMicStatus(t("micDetected"));
 
       const isFinal = !!(chosen && chosen.isFinal);
 
@@ -698,8 +1004,8 @@ Happy recording!`);
       console.error("Speech recognition error:", event.error);
       const error = event.error || "unknown";
       updateMicStatus(
-        SPEECH_ERROR_MESSAGES[error] ||
-          `Speech recognition error: ${error}. Check Chrome console for details.`
+        (SPEECH_ERROR_KEYS[error] && t(SPEECH_ERROR_KEYS[error])) ||
+          `${t("micUnknownError")}: ${error}. ${t("checkConsole")}`
       );
 
       if (FATAL_SPEECH_ERRORS.has(error)) {
@@ -803,6 +1109,7 @@ Happy recording!`);
     language: "en-US",
     mirrorX: false,
     showSupportPrompts: true,
+    uiLanguage: "en",
   };
 
   const resetSettingsToDefault = () => {
@@ -833,9 +1140,11 @@ Happy recording!`);
     setLanguage(defaultSettings.language);
     setMirrorX(defaultSettings.mirrorX);
     setShowSupportPrompts(defaultSettings.showSupportPrompts);
+    setUiLanguage(defaultSettings.uiLanguage);
     try {
       localStorage.removeItem(SETTINGS_KEY);
       localStorage.removeItem(SUPPORT_PROMPTS_KEY);
+      localStorage.removeItem(UI_LANGUAGE_KEY);
     } catch (_) {}
   };
 
@@ -1079,6 +1388,8 @@ Happy recording!`);
       if (s.mirrorX != null) setMirrorX(!!s.mirrorX);
       if (s.showSupportPrompts != null)
         setShowSupportPrompts(!!s.showSupportPrompts);
+      if (s.uiLanguage === "es" || s.uiLanguage === "en")
+        setUiLanguage(s.uiLanguage);
       if (s.textFormat === "markdown" || s.textFormat === "plain")
         setTextFormat(s.textFormat);
     } catch (_) {}
@@ -1120,6 +1431,7 @@ Happy recording!`);
         mirrorX,
         textFormat,
         showSupportPrompts,
+        uiLanguage,
 
         text,
       };
@@ -1129,6 +1441,7 @@ Happy recording!`);
           SUPPORT_PROMPTS_KEY,
           showSupportPrompts ? "true" : "false"
         );
+        localStorage.setItem(UI_LANGUAGE_KEY, uiLanguage);
       } catch (_) {}
     }, 400);
     return () => clearTimeout(timer);
@@ -1161,6 +1474,7 @@ Happy recording!`);
     mirrorX,
     textFormat,
     showSupportPrompts,
+    uiLanguage,
     text,
   ]);
 
@@ -1216,11 +1530,11 @@ Happy recording!`);
         setText(txt);
         setShowEditor(true);
       } else {
-        alert("Supported file types: .txt, .md");
+        alert(t("supportedFileTypes"));
       }
     } catch (e) {
       console.error(e);
-      alert("Failed to load file");
+      alert(t("fileLoadFailed"));
     } finally {
       event.target.value = "";
     }
@@ -1232,8 +1546,8 @@ Happy recording!`);
       <IconButton uiOpacity={uiOpacity}
         onClick={() => inputRef.current && inputRef.current.click()}
         ariaLabel="Open File"
-        tooltipTitle="Open File"
-        tooltipDesc="Import .txt/.md"
+        tooltipTitle={t("openFile")}
+        tooltipDesc={t("importFileTip")}
       >
         <Icon name={"arrow-up-tray"} />
         <input
@@ -1855,7 +2169,7 @@ Happy recording!`);
       // Fully tear down immediately and release mic permissions
       setIsListening(false);
       setIsPlaying(false);
-      updateMicStatus("Speech recognition stopped.");
+      updateMicStatus(t("micStopped"));
       hardStopRecognition();
     } else {
       try {
@@ -1865,7 +2179,7 @@ Happy recording!`);
             micForceStoppedRef.current = false;
           } catch (_) {}
         }
-        updateMicStatus("Starting speech recognition...");
+        updateMicStatus(t("micStarting"));
         safeRestartRecognition(150);
         setIsListening(true);
         setIsPlaying(false);
@@ -2523,8 +2837,8 @@ Happy recording!`);
           <IconButton uiOpacity={uiOpacity}
             onClick={toggleListening}
             ariaLabel="Microphone"
-            tooltipTitle="Microphone (V)"
-            tooltipDesc="Start/Stop speech recognition"
+            tooltipTitle={`${t("microphone")} (V)`}
+            tooltipDesc={t("microphoneTip")}
             style={{ background: isListening ? "#d32f2f" : "#0f0f0f" }}
           >
             {isListening ? (
@@ -2565,8 +2879,8 @@ Happy recording!`);
                 }
               }}
               ariaLabel="Language"
-              tooltipTitle="Language Selection (L)"
-              tooltipDesc="Select speech recognition language"
+              tooltipTitle={`${t("language")} (L)`}
+              tooltipDesc={t("languageTip")}
               style={{ background: "#0f0f0f", width: "auto", padding: "0 8px" }}
             >
               <div
@@ -2604,8 +2918,8 @@ Happy recording!`);
           <IconButton uiOpacity={uiOpacity}
             onClick={() => setMirrorX((v) => !v)}
             ariaLabel="Mirror X"
-            tooltipTitle="Mirror horizontally (M)"
-            tooltipDesc="Flip text horizontally"
+            tooltipTitle={`${t("mirror")} (M)`}
+            tooltipDesc={t("mirrorTip")}
             style={{ background: mirrorX ? "#2e7d32" : "#0f0f0f" }}
           >
             <svg
@@ -2701,8 +3015,8 @@ Happy recording!`);
           <IconButton uiOpacity={uiOpacity}
             onClick={toggleAutoPlay}
             ariaLabel="Auto Scroll"
-            tooltipTitle="Auto Scroll (P)"
-            tooltipDesc="Play/Pause"
+            tooltipTitle={`${t("autoScroll")} (P)`}
+            tooltipDesc={t("playPause")}
             style={{ background: isPlaying ? "#ff9800" : "#0f0f0f" }}
           >
             <Icon name={isPlaying ? "pause" : "play"} />
@@ -2714,8 +3028,8 @@ Happy recording!`);
           <IconButton uiOpacity={uiOpacity}
             onClick={() => setShowHighlight((v) => !v)}
             ariaLabel="Toggle highlight"
-            tooltipTitle="Word highlight (H)"
-            tooltipDesc={showHighlight ? "Hide highlight" : "Show highlight"}
+            tooltipTitle={`${t("wordHighlight")} (H)`}
+            tooltipDesc={showHighlight ? t("hideHighlight") : t("showHighlight")}
             style={{ background: showHighlight ? "#0f0f0f" : "#0f0f0f" }}
           >
             {showHighlight ? (
@@ -2756,8 +3070,8 @@ Happy recording!`);
           <IconButton uiOpacity={uiOpacity}
             onClick={resetPosition}
             ariaLabel="Reset"
-            tooltipTitle="Reset (R)"
-            tooltipDesc="Go to start and stop modes"
+            tooltipTitle={`${t("reset")} (R)`}
+            tooltipDesc={t("resetTip")}
             style={{ background: "#0f0f0f" }}
           >
             <Icon name={"arrow-path"} />
@@ -2766,8 +3080,8 @@ Happy recording!`);
           <IconButton uiOpacity={uiOpacity}
             onClick={() => setShowEditor(!showEditor)}
             ariaLabel="Script Editor"
-            tooltipTitle="Script Editor (S)"
-            tooltipDesc="Toggle script editor"
+            tooltipTitle={`${t("scriptEditor")} (S)`}
+            tooltipDesc={t("scriptEditorTip")}
             style={{ background: "#0f0f0f" }}
           >
             <Icon name={"pencil-square"} />
@@ -2776,8 +3090,8 @@ Happy recording!`);
           <IconButton uiOpacity={uiOpacity}
             onClick={() => setShowSettings(!showSettings)}
             ariaLabel="Settings"
-            tooltipTitle="Settings (E)"
-            tooltipDesc="Open configuration"
+            tooltipTitle={`${t("settings")} (E)`}
+            tooltipDesc={t("settingsTip")}
             style={{ background: "#0f0f0f" }}
           >
             <Icon name={"adjustments-horizontal"} />
@@ -2786,8 +3100,8 @@ Happy recording!`);
           <IconButton uiOpacity={uiOpacity}
             onClick={toggleFullscreen}
             ariaLabel="Fullscreen"
-            tooltipTitle="Fullscreen (F)"
-            tooltipDesc={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            tooltipTitle={`${t("fullscreen")} (F)`}
+            tooltipDesc={isFullscreen ? t("exitFullscreen") : t("enterFullscreen")}
             style={{ background: "#0f0f0f" }}
           >
             <Icon
@@ -2798,8 +3112,8 @@ Happy recording!`);
           <IconButton uiOpacity={uiOpacity}
             onClick={() => setShowShortcuts((v) => !v)}
             ariaLabel="Keyboard Shortcuts"
-            tooltipTitle="Keyboard Shortcuts (?)"
-            tooltipDesc="Show all keyboard shortcuts"
+            tooltipTitle={`${t("keyboardShortcuts")} (?)`}
+            tooltipDesc={t("keyboardShortcutsTip")}
             style={{ background: showShortcuts ? "#1565c0" : "#0f0f0f" }}
           >
             <svg
@@ -2829,8 +3143,8 @@ Happy recording!`);
                 window.open("https://buymeacoffee.com/nrjsoeq61", "_blank")
               }
               ariaLabel="Buy Me a Coffee"
-              tooltipTitle="Buy Me a Coffee"
-              tooltipDesc="Support development with a coffee"
+              tooltipTitle={t("buyMeCoffee")}
+              tooltipDesc={t("supportBody")}
               style={{ background: "#0f0f0f" }}
             >
               <svg
@@ -2855,8 +3169,8 @@ Happy recording!`);
           <IconButton uiOpacity={uiOpacity}
             onClick={() => (window.location.href = "./index.html")}
             ariaLabel="Back to Homepage"
-            tooltipTitle="Back to Homepage"
-            tooltipDesc="Return to the main website"
+            tooltipTitle={t("backHome")}
+            tooltipDesc={t("backHomeTip")}
             style={{ background: "#0f0f0f" }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -2895,7 +3209,7 @@ Happy recording!`);
             }}
           >
             <h2 style={{ color: "white", margin: 0 }}>
-              {showEditor ? "Script Editor" : "Settings"}
+              {showEditor ? t("scriptEditor") : t("settings")}
             </h2>
             <div style={{ marginLeft: "auto" }}>
               <button
@@ -2912,7 +3226,7 @@ Happy recording!`);
                   cursor: "pointer",
                 }}
               >
-                Close
+                {t("close")}
               </button>
             </div>
           </div>
@@ -2949,7 +3263,7 @@ Happy recording!`);
                     fontWeight: "bold",
                   }}
                 >
-                  Import
+                  {t("import")}
                 </button>
                 <input
                   ref={fileInputRef}
@@ -2961,7 +3275,7 @@ Happy recording!`);
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(text);
-                    alert("Text copied to clipboard!");
+                    alert(t("copied"));
                   }}
                   style={{
                     flex: 1,
@@ -2975,11 +3289,11 @@ Happy recording!`);
                     fontWeight: "bold",
                   }}
                 >
-                  📋 Copy
+                  📋 {t("copy")}
                 </button>
                 <button
                   onClick={() => {
-                    if (confirm("Are you sure you want to clear all text?")) {
+                    if (confirm(t("clearConfirm"))) {
                       setText("");
                     }
                   }}
@@ -2995,7 +3309,7 @@ Happy recording!`);
                     fontWeight: "bold",
                   }}
                 >
-                  🗑️ Clear
+                  🗑️ {t("clear")}
                 </button>
               </div>
 
@@ -3018,7 +3332,7 @@ Happy recording!`);
                     fontWeight: "bold",
                   }}
                 >
-                  <span>📚 My Scripts ({savedScripts.length}/{MAX_SCRIPTS})</span>
+                  <span>📚 {t("myScripts")} ({savedScripts.length}/{MAX_SCRIPTS})</span>
                   <span style={{ fontSize: "10px", color: "#888" }}>
                     {showScriptList ? "▲" : "▼"}
                   </span>
@@ -3042,7 +3356,7 @@ Happy recording!`);
                         marginBottom: "10px",
                       }}
                     >
-                      + Add Script
+                      + {t("addScript")}
                     </button>
 
                     {savedScripts.length === 0 ? (
@@ -3056,7 +3370,7 @@ Happy recording!`);
                           borderRadius: "8px",
                         }}
                       >
-                        No saved scripts yet.
+                        {t("noSavedScripts")}
                       </div>
                     ) : (
                       <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
@@ -3088,7 +3402,7 @@ Happy recording!`);
                               <div style={{ color: "#666", fontSize: "10px", marginTop: "1px" }}>
                                 {(languagesList.find((l) => l.code === script.language) || {}).label || script.language || "—"}
                                 {" · "}
-                                {script.text.split(/\s+/).filter(Boolean).length} words
+                                {script.text.split(/\s+/).filter(Boolean).length} {t("words")}
                               </div>
                             </div>
                             <button
@@ -3105,7 +3419,7 @@ Happy recording!`);
                                 whiteSpace: "nowrap",
                               }}
                             >
-                              Load
+                              {t("load")}
                             </button>
                             <button
                               onClick={() => openEditScriptModal(script)}
@@ -3119,7 +3433,7 @@ Happy recording!`);
                                 fontSize: "12px",
                               }}
                             >
-                              Edit
+                              {t("edit")}
                             </button>
                             <button
                               onClick={() => shareScript(script)}
@@ -3138,7 +3452,7 @@ Happy recording!`);
                                 fontSize: "12px",
                               }}
                             >
-                              {shareBusyId === script.id ? "…" : "Share"}
+                              {shareBusyId === script.id ? t("shareBusy") : t("share")}
                             </button>
                             <button
                               onClick={() => setDeleteScriptConfirm(script)}
@@ -3180,7 +3494,7 @@ Happy recording!`);
                   fontWeight: "bold",
                 }}
               >
-                Reset Settings
+                {t("resetSettings")}
               </button>
 
               <div style={{ marginBottom: "20px" }}>
@@ -3191,7 +3505,42 @@ Happy recording!`);
                     marginBottom: "8px",
                   }}
                 >
-                  Font size: {fontSize}px
+                  {t("uiLanguage")}
+                </label>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  {[
+                    ["en", t("english")],
+                    ["es", t("spanish")],
+                  ].map(([code, label]) => (
+                    <button
+                      key={code}
+                      onClick={() => setUiLanguage(code)}
+                      style={{
+                        flex: 1,
+                        padding: "10px 12px",
+                        borderRadius: "8px",
+                        border: "1px solid #555",
+                        background: uiLanguage === code ? "#2e7d32" : "#0f0f0f",
+                        color: "white",
+                        cursor: "pointer",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: "20px" }}>
+                <label
+                  style={{
+                    color: "white",
+                    display: "block",
+                    marginBottom: "8px",
+                  }}
+                >
+                  {t("fontSize")}: {fontSize}px
                 </label>
                 <div
                   className="custom-slider"
@@ -3256,7 +3605,7 @@ Happy recording!`);
                     marginBottom: "8px",
                   }}
                 >
-                  Side padding: {sidePaddingVw}vw
+                  {t("sidePadding")}: {sidePaddingVw}vw
                 </label>
                 <div
                   className="custom-slider"
@@ -3323,7 +3672,7 @@ Happy recording!`);
                     marginBottom: "8px",
                   }}
                 >
-                  Text align
+                  {t("textAlign")}
                 </label>
                 <div style={{ display: "flex", gap: "8px" }}>
                   <button
@@ -3360,7 +3709,7 @@ Happy recording!`);
                         <line x1="3" y1="12" x2="15" y2="12" />
                         <line x1="3" y1="18" x2="18" y2="18" />
                       </svg>
-                      Left
+                      {t("left")}
                     </span>
                   </button>
                   <button
@@ -3397,7 +3746,7 @@ Happy recording!`);
                         <line x1="3" y1="12" x2="21" y2="12" />
                         <line x1="6" y1="18" x2="18" y2="18" />
                       </svg>
-                      Center
+                      {t("center")}
                     </span>
                   </button>
                   <button
@@ -3434,7 +3783,7 @@ Happy recording!`);
                         <line x1="9" y1="12" x2="21" y2="12" />
                         <line x1="6" y1="18" x2="21" y2="18" />
                       </svg>
-                      Right
+                      {t("right")}
                     </span>
                   </button>
                 </div>
@@ -3448,7 +3797,7 @@ Happy recording!`);
                     marginBottom: "8px",
                   }}
                 >
-                  Line height: {lineHeight.toFixed(1)}
+                  {t("lineHeight")}: {lineHeight.toFixed(1)}
                 </label>
                 <div
                   className="custom-slider"
@@ -3515,7 +3864,7 @@ Happy recording!`);
                     marginBottom: "8px",
                   }}
                 >
-                  Paragraph spacing: {paragraphSpacingPx}px
+                  {t("paragraphSpacing")}: {paragraphSpacingPx}px
                 </label>
                 <div
                   className="custom-slider"
@@ -3580,7 +3929,7 @@ Happy recording!`);
                     marginBottom: "8px",
                   }}
                 >
-                  Auto-scroll speed: {scrollSpeed}
+                  {t("autoScrollSpeed")}: {scrollSpeed}
                 </label>
                 <div
                   className="custom-slider"
@@ -3645,7 +3994,7 @@ Happy recording!`);
                     marginBottom: "8px",
                   }}
                 >
-                  Lookahead window: {lookaheadWindow} words
+                  {t("lookaheadWindow")}: {lookaheadWindow} {t("words")}
                 </label>
                 <div
                   className="custom-slider"
@@ -3706,8 +4055,7 @@ Happy recording!`);
                 <div
                   style={{ color: "#aaa", fontSize: "12px", marginTop: "4px" }}
                 >
-                  Increase if voice tracking feels slow (recommended: 12-15 for
-                  English, 8-10 for Greek)
+                  {t("lookaheadHelp")}
                 </div>
               </div>
 
@@ -3719,7 +4067,7 @@ Happy recording!`);
                     marginBottom: "8px",
                   }}
                 >
-                  Co-host lines: {skipCoHostLines ? "Skip" : "Off"}
+                  {t("coHostLines")}: {skipCoHostLines ? t("skip") : t("off")}
                 </label>
                 <button
                   onClick={() => setSkipCoHostLines(!skipCoHostLines)}
@@ -3733,15 +4081,14 @@ Happy recording!`);
                     cursor: "pointer",
                   }}
                   aria-label="Toggle co-host line skipping"
-                  title='Lines starting with ">>" or "@Name:" are dimmed and voice tracking jumps over them'
+                  title={t("coHostLinesTitle")}
                 >
-                  {skipCoHostLines ? "Enabled" : "Enable"}
+                  {skipCoHostLines ? t("enabled") : t("enable")}
                 </button>
                 <div
                   style={{ color: "#aaa", fontSize: "12px", marginTop: "4px" }}
                 >
-                  Start a line with &gt;&gt; or @Name: to mark it as another
-                  speaker's — it shows dimmed and voice tracking skips it
+                  {t("coHostLinesHelp")}
                 </div>
               </div>
 
@@ -3753,7 +4100,7 @@ Happy recording!`);
                     marginBottom: "8px",
                   }}
                 >
-                  Text opacity: {Math.round(textOpacity * 100)}%
+                  {t("textOpacity")}: {Math.round(textOpacity * 100)}%
                 </label>
                 <div
                   className="custom-slider"
@@ -3820,7 +4167,7 @@ Happy recording!`);
                     marginBottom: "8px",
                   }}
                 >
-                  Aim opacity: {Math.round(aimOpacity * 100)}%
+                  {t("aimOpacity")}: {Math.round(aimOpacity * 100)}%
                 </label>
                 <div
                   className="custom-slider"
@@ -3887,7 +4234,7 @@ Happy recording!`);
                     marginBottom: "8px",
                   }}
                 >
-                  Paragraph highlight opacity:{" "}
+                  {t("paragraphHighlightOpacity")}:{" "}
                   {Math.round(paragraphHighlightOpacity * 100)}%
                 </label>
                 <div
@@ -3957,7 +4304,7 @@ Happy recording!`);
                     marginBottom: "8px",
                   }}
                 >
-                  Operation buttons opacity: {Math.round(uiOpacity * 100)}%
+                  {t("operationButtonsOpacity")}: {Math.round(uiOpacity * 100)}%
                 </label>
                 <div
                   className="custom-slider"
@@ -4024,7 +4371,7 @@ Happy recording!`);
                     marginBottom: "8px",
                   }}
                 >
-                  Aim indicator: {showAim ? "On" : "Off"}
+                  {t("showAimMarker")}: {showAim ? t("enabled") : t("disabled")}
                 </label>
                 <button
                   onClick={() => setShowAim(!showAim)}
@@ -4040,7 +4387,7 @@ Happy recording!`);
                   }}
                   aria-label="Toggle Aim Indicator"
                 >
-                  {showAim ? "Disable" : "Enable"}
+                  {showAim ? t("disabled") : t("enable")}
                 </button>
                 <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
                   <div style={{ flex: 1 }}>
@@ -4051,18 +4398,18 @@ Happy recording!`);
                         marginBottom: "8px",
                       }}
                     >
-                      Marker style
+                      {t("aimMarkerStyle")}
                     </label>
                     <div style={{ display: "flex", gap: "6px" }}>
                       {[
-                        ["crosshair", "Crosshair"],
-                        ["dot", "Dot"],
-                        ["frame", "Frame"],
+                        ["crosshair", t("crosshair")],
+                        ["dot", t("dot")],
+                        ["frame", t("frame")],
                       ].map(([value, label]) => (
                         <button
                           key={value}
                           onClick={() => setAimStyle(value)}
-                          aria-label={`Marker style: ${label}`}
+                          aria-label={`${t("aimMarkerStyle")}: ${label}`}
                           aria-pressed={aimStyle === value}
                           style={{
                             flex: 1,
@@ -4092,7 +4439,7 @@ Happy recording!`);
                         marginBottom: "8px",
                       }}
                     >
-                      Marker color
+                      {t("aimMarkerColor")}
                     </label>
                     <div style={{ display: "flex", gap: "6px" }}>
                       {[
@@ -4133,7 +4480,7 @@ Happy recording!`);
                         marginBottom: "8px",
                       }}
                     >
-                      Horizontal offset: {aimOffsetX}px
+                      {t("horizontalOffset")}: {aimOffsetX}px
                     </label>
                     <div
                       className="custom-slider"
@@ -4207,7 +4554,7 @@ Happy recording!`);
                         marginBottom: "8px",
                       }}
                     >
-                      Vertical offset: {aimOffsetY}px
+                      {t("verticalOffset")}: {aimOffsetY}px
                     </label>
                     <div
                       className="custom-slider"
@@ -4291,9 +4638,9 @@ Happy recording!`);
                     fontSize: "14px",
                     fontWeight: "500",
                   }}
-                  title="Reset aim indicator to center"
+                  title={t("resetToCenter")}
                 >
-                  Reset to Center
+                  {t("resetToCenter")}
                 </button>
               </div>
 
@@ -4305,8 +4652,8 @@ Happy recording!`);
                     marginBottom: "8px",
                   }}
                 >
-                  "Listening" indicator:{" "}
-                  {showListeningIndicator ? "Visible" : "Hidden"}
+                  {t("listeningIndicator")}:{" "}
+                  {showListeningIndicator ? t("visible") : t("hidden")}
                 </label>
                 <button
                   onClick={() =>
@@ -4322,9 +4669,9 @@ Happy recording!`);
                     cursor: "pointer",
                   }}
                   aria-label="Toggle Listening Indicator"
-                  title="Hide the red 'Listening...' pill while recording — the mic button still shows red when active"
+                  title={t("hideWhileRecording")}
                 >
-                  {showListeningIndicator ? "Hide while recording" : "Show"}
+                  {showListeningIndicator ? t("hideWhileRecording") : t("show")}
                 </button>
               </div>
 
@@ -4336,7 +4683,7 @@ Happy recording!`);
                     marginBottom: "8px",
                   }}
                 >
-                  Support prompts: {showSupportPrompts ? "Visible" : "Hidden"}
+                  {t("supportPrompts")}: {showSupportPrompts ? t("visible") : t("hidden")}
                 </label>
                 <button
                   onClick={() => {
@@ -4354,9 +4701,9 @@ Happy recording!`);
                     cursor: "pointer",
                   }}
                   aria-label="Toggle Support Prompts"
-                  title="Hide or show Buy Me a Coffee buttons and support messages"
+                  title={t("supportPrompts")}
                 >
-                  {showSupportPrompts ? "Hide everywhere" : "Show"}
+                  {showSupportPrompts ? t("hideEverywhere") : t("show")}
                 </button>
               </div>
 
@@ -4368,7 +4715,7 @@ Happy recording!`);
                     marginBottom: "8px",
                   }}
                 >
-                  Text centering offset (top/bottom): {centerPaddingVh}vh
+                  {t("textCenteringOffset")}: {centerPaddingVh}vh
                 </label>
                 <div
                   className="custom-slider"
@@ -4437,7 +4784,7 @@ Happy recording!`);
                     marginBottom: "8px",
                   }}
                 >
-                  Background color
+                  {t("backgroundColor")}
                 </label>
                 <input
                   type="color"
@@ -4455,7 +4802,7 @@ Happy recording!`);
                     marginBottom: "8px",
                   }}
                 >
-                  Text color
+                  {t("textColor")}
                 </label>
                 <input
                   type="color"
@@ -4473,7 +4820,7 @@ Happy recording!`);
                     marginBottom: "8px",
                   }}
                 >
-                  Highlight color
+                  {t("highlightColor")}
                 </label>
                 <input
                   type="color"
@@ -4614,12 +4961,12 @@ Happy recording!`);
           }}
         >
           <div style={{ fontWeight: "bold", marginBottom: "8px" }}>
-            ⚠️ iOS Limitation
+            ⚠️ {t("iosLimitation")}
           </div>
           <div style={{ fontSize: "14px" }}>
-            Speech recognition doesn't work on iOS devices.
+            {t("iosSpeechUnavailable")}
             <br />
-            Only <strong>Auto Play</strong> mode is available.
+            {t("iosAutoPlayOnly")}
           </div>
         </div>
       )}
@@ -4651,7 +4998,7 @@ Happy recording!`);
         >
           <span aria-hidden="true">🎙️</span>
           <span>
-            <span>{isListening ? "Listening..." : "Microphone status"}</span>
+            <span>{isListening ? t("listening") : t("microphoneStatus")}</span>
             {micStatus && (
               <span
                 role="status"
@@ -4713,10 +5060,10 @@ Happy recording!`);
             ×
           </button>
           <div style={{ marginBottom: "8px", fontWeight: "bold" }}>
-            Enjoying Smart Teleprompter?
+            {t("supportTitle")}
           </div>
           <div style={{ marginBottom: "8px" }}>
-            Support development with a coffee ☕
+            {t("supportBody")} ☕
           </div>
           <button
             onClick={() =>
@@ -4734,7 +5081,7 @@ Happy recording!`);
               width: "100%",
             }}
           >
-            Buy Me a Coffee
+            {t("buyMeCoffee")}
           </button>
         </div>
       )}
@@ -4777,7 +5124,7 @@ Happy recording!`);
                 fontSize: "20px",
               }}
             >
-              Delete Script?
+              {t("deleteScriptTitle")}
             </h2>
             <p
               style={{
@@ -4787,7 +5134,7 @@ Happy recording!`);
                 margin: "0 0 8px",
               }}
             >
-              Are you sure you want to delete
+              {t("deleteScriptPrompt")}
             </p>
             <p
               style={{
@@ -4818,7 +5165,7 @@ Happy recording!`);
                   fontSize: "14px",
                 }}
               >
-                Cancel
+                {t("cancel")}
               </button>
               <button
                 onClick={confirmDeleteScript}
@@ -4833,7 +5180,7 @@ Happy recording!`);
                   fontSize: "14px",
                 }}
               >
-                Delete
+                {t("delete")}
               </button>
             </div>
           </div>
@@ -4881,7 +5228,7 @@ Happy recording!`);
               }}
             >
               <h2 style={{ color: "white", margin: 0, fontSize: "18px" }}>
-                {editScriptId ? "Edit Script" : "Add Script"}
+                {editScriptId ? t("editScriptTitle") : t("addScriptTitle")}
               </h2>
               <button
                 onClick={() => setShowAddScript(false)}
@@ -4905,14 +5252,14 @@ Happy recording!`);
                 marginBottom: "4px",
               }}
             >
-              Script name
+              {t("scriptName")}
             </label>
             <input
               type="text"
               value={addScriptName}
               onChange={(e) => setAddScriptName(e.target.value)}
               onKeyDown={(e) => e.stopPropagation()}
-              placeholder="e.g. Episode 1 intro..."
+              placeholder={t("scriptNamePlaceholder")}
               style={{
                 padding: "10px 14px",
                 borderRadius: "8px",
@@ -4926,7 +5273,7 @@ Happy recording!`);
             />
             {scriptFormTouched && !addScriptName.trim() && (
               <div style={{ color: "#ef5350", fontSize: "12px", marginBottom: "8px" }}>
-                Please enter a script name.
+                {t("scriptNameRequired")}
               </div>
             )}
 
@@ -4937,7 +5284,7 @@ Happy recording!`);
                 marginBottom: "4px",
               }}
             >
-              Language
+              {t("language")}
             </label>
             <select
               value={addScriptLanguage}
@@ -4968,13 +5315,13 @@ Happy recording!`);
                 marginBottom: "4px",
               }}
             >
-              Script text
+              {t("scriptText")}
             </label>
             <textarea
               value={addScriptText}
               onChange={(e) => setAddScriptText(e.target.value)}
               onKeyDown={(e) => e.stopPropagation()}
-              placeholder="Paste or type your script here..."
+              placeholder={t("scriptTextPlaceholder")}
               style={{
                 flex: 1,
                 minHeight: "200px",
@@ -4992,7 +5339,7 @@ Happy recording!`);
             />
             {scriptFormTouched && !addScriptText.trim() && (
               <div style={{ color: "#ef5350", fontSize: "12px", marginBottom: "12px" }}>
-                Please enter the script text.
+                {t("scriptTextRequired")}
               </div>
             )}
             <div
@@ -5004,11 +5351,7 @@ Happy recording!`);
                 lineHeight: 1.5,
               }}
             >
-              💡 Recording with a co-host? Start their lines with{" "}
-              <code style={{ color: "#ffd54f" }}>&gt;&gt;</code> or{" "}
-              <code style={{ color: "#ffd54f" }}>@Name:</code> — they'll appear
-              dimmed and voice tracking will skip to your next line
-              automatically.
+              💡 {t("coHostTip")}
             </div>
 
             <div
@@ -5031,7 +5374,7 @@ Happy recording!`);
                   fontSize: "13px",
                 }}
               >
-                Cancel
+                {t("cancel")}
               </button>
               <button
                 onClick={() => saveScript(false)}
@@ -5046,7 +5389,7 @@ Happy recording!`);
                   fontSize: "13px",
                 }}
               >
-                Save
+                {t("save")}
               </button>
               <button
                 onClick={() => saveScript(true)}
@@ -5061,7 +5404,7 @@ Happy recording!`);
                   fontSize: "13px",
                 }}
               >
-                Save & Load
+                {t("saveAndLoad")}
               </button>
             </div>
           </div>
@@ -5106,7 +5449,7 @@ Happy recording!`);
                 fontSize: "20px",
               }}
             >
-              Reset All Settings?
+              {t("resetAllSettingsTitle")}
             </h2>
             <p
               style={{
@@ -5116,9 +5459,7 @@ Happy recording!`);
                 margin: "0 0 24px",
               }}
             >
-              This will restore all settings to their defaults: font size,
-              colors, speed, language, and layout. Your script text will not be
-              affected.
+              {t("resetAllSettingsBody")}
             </p>
             <div
               style={{ display: "flex", gap: "12px", justifyContent: "center" }}
@@ -5136,7 +5477,7 @@ Happy recording!`);
                   fontSize: "14px",
                 }}
               >
-                Cancel
+                {t("cancel")}
               </button>
               <button
                 onClick={() => {
@@ -5154,7 +5495,7 @@ Happy recording!`);
                   fontSize: "14px",
                 }}
               >
-                Reset
+                {t("reset")}
               </button>
             </div>
           </div>
@@ -5201,7 +5542,7 @@ Happy recording!`);
               }}
             >
               <h2 style={{ color: "white", margin: 0, fontSize: "20px" }}>
-                ⌨️ Keyboard Shortcuts
+                ⌨️ {t("keyboardShortcuts")}
               </h2>
               <button
                 onClick={() => setShowShortcuts(false)}
@@ -5218,17 +5559,17 @@ Happy recording!`);
               </button>
             </div>
             {[
-              ["V", "Start / Stop microphone"],
-              ["P", "Play / Pause auto-scroll"],
-              ["H", "Toggle word highlighting"],
-              ["R", "Reset to beginning"],
-              ["L", "Language selection"],
-              ["E", "Settings menu"],
-              ["S", "Script editor"],
-              ["B", "My Scripts (in editor)"],
-              ["F", "Fullscreen mode"],
-              ["M", "Mirror text horizontally"],
-              ["?", "Show this panel"],
+              ["V", t("shortcutsStartStopMic")],
+              ["P", t("shortcutsAutoScroll")],
+              ["H", t("shortcutsHighlight")],
+              ["R", t("shortcutsReset")],
+              ["L", t("shortcutsLanguage")],
+              ["E", t("shortcutsSettings")],
+              ["S", t("shortcutsEditor")],
+              ["B", t("shortcutsMyScripts")],
+              ["F", t("shortcutsFullscreen")],
+              ["M", t("shortcutsMirror")],
+              ["?", t("shortcutsPanel")],
             ].map(([key, desc]) => (
               <div
                 key={key}
