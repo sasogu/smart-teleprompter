@@ -396,6 +396,7 @@ Happy recording!`);
   const [extraBottomSpacePx, setExtraBottomSpacePx] = useState(0);
 
   const recognitionRef = useRef(null);
+  const fileInputRef = useRef(null);
   const wordsRef = useRef([]);
   const normalizedWordsRef = useRef([]);
   const linesRawRef = useRef([]);
@@ -2748,6 +2749,29 @@ Happy recording!`);
                 }}
               />
               <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+                <button
+                  onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                  style={{
+                    flex: 1,
+                    padding: "8px 12px",
+                    borderRadius: "6px",
+                    border: "1px solid #555",
+                    background: "#1565c0",
+                    color: "white",
+                    cursor: "pointer",
+                    fontSize: "12px",
+                    fontWeight: "bold",
+                  }}
+                >
+                  Import
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".txt,.md,.markdown,text/plain,text/markdown"
+                  onChange={handleFileUpload}
+                  style={{ display: "none" }}
+                />
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(text);

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import SmartTeleprompter from "../src/App";
 
 describe("SmartTeleprompter", () => {
@@ -20,5 +20,11 @@ describe("SmartTeleprompter", () => {
     expect(container.textContent).toContain("Welcome");
     expect(container.textContent).toContain("Smart");
     expect(container.textContent).toContain("Teleprompter");
+  });
+
+  it("shows the file import button in the script editor", () => {
+    render(<SmartTeleprompter />);
+    fireEvent.click(screen.getAllByLabelText("Script Editor")[0]);
+    expect(screen.getByRole("button", { name: "Import" })).toBeInTheDocument();
   });
 });
