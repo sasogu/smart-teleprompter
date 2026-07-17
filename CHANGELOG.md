@@ -5,6 +5,15 @@ All notable changes to Smart Teleprompter will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Markdown imports now render as teleprompter-friendly text: headings, lists, quotes, links, inline code, emphasis, and code blocks are cleaned up for reading while the editor keeps the original Markdown source.
+- The Script Editor now exposes the existing `.txt`/`.md`/`.markdown` file import control through an Import button.
+- Voice recognition now shows visible microphone diagnostics instead of silently restarting when Chrome reports no speech, missing microphone input, blocked permissions, or speech service errors.
+- Settings now include a Support prompts toggle that hides Buy Me a Coffee buttons and support messages across the app and landing page.
+
 ## [2.2.0] - 2026-07-02
 
 ### Added

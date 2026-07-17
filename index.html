@@ -127,6 +127,7 @@
             href="https://buymeacoffee.com/nrjsoeq61"
             target="_blank"
             rel="noopener"
+            data-support-prompt
             class="hidden md:block px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-lg transition-colors"
           >
             ☕ Buy Me a Coffee
@@ -518,6 +519,7 @@
               href="https://buymeacoffee.com/nrjsoeq61"
               target="_blank"
               rel="noopener"
+              data-support-prompt
               class="hover:text-yellow-400 transition-colors"
               >Support Development</a
             >
@@ -541,5 +543,14 @@
         </div>
       </footer>
     </div>
+    <script>
+      try {
+        if (localStorage.getItem("smartTeleprompterShowSupportPrompts") === "false") {
+          document.querySelectorAll("[data-support-prompt]").forEach((el) => {
+            el.style.display = "none";
+          });
+        }
+      } catch (_) {}
+    </script>
   </body>
 </html>

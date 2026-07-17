@@ -46,6 +46,132 @@ function Icon({ name }) {
 // the co-host's part is.
 const CO_HOST_LINE_RE = /^\s*(>>|@[^\s:]{1,30}:)/;
 
+const DEFAULT_LINE_STYLE = { type: "paragraph", depth: 0 };
+
+const SPEECH_ERROR_MESSAGES = {
+  "no-speech": "Still listening. Start speaking when ready.",
+  "audio-capture": "No microphone input detected. Check Chrome microphone settings.",
+  network: "Speech recognition service unavailable. Check internet access or Chrome speech service settings.",
+  "not-allowed": "Microphone permission is blocked for this site.",
+  "service-not-allowed": "Chrome blocked the speech recognition service for this site.",
+  aborted: "Speech recognition stopped.",
+};
+
+const FATAL_SPEECH_ERRORS = new Set([
+  "audio-capture",
+  "network",
+  "not-allowed",
+  "service-not-allowed",
+]);
+
+const SUPPORT_PROMPTS_KEY = "smartTeleprompterShowSupportPrompts";
+
+function cleanMarkdownInline(input) {
+  return input
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/(\*\*|__)(.*?)\1/g, "$2")
+    .replace(/(\*|_)(.*?)\1/g, "$2")
+    .replace(/~~(.*?)~~/g, "$1")
+    .replace(/<[^>]+>/g, "")
+    .trim();
+}
+
+function markdownToTeleprompterLines(markdown) {
+  const lines = markdown.split(/\r?\n/);
+  const result = [];
+  let inCodeBlock = false;
+
+  for (const rawLine of lines) {
+    const trimmed = rawLine.trim();
+
+    if (/^```|^~~~/.test(trimmed)) {
+      inCodeBlock = !inCodeBlock;
+      continue;
+    }
+
+    if (inCodeBlock) {
+      result.push({
+        text: rawLine.trimEnd(),
+        style: { type: "code", depth: 0 },
+      });
+      continue;
+    }
+
+    const heading = trimmed.match(/^(#{1,6})\s+(.+)$/);
+    if (heading) {
+      result.push({
+        text: cleanMarkdownInline(heading[2]),
+        style: { type: "heading", depth: heading[1].length },
+      });
+      continue;
+    }
+
+    const quote = trimmed.match(/^>\s?(.+)$/);
+    if (quote) {
+      result.push({
+        text: cleanMarkdownInline(quote[1]),
+        style: { type: "quote", depth: 0 },
+      });
+      continue;
+    }
+
+    const listItem = rawLine.match(/^(\s*)([-*+]|\d+[.)])\s+(.+)$/);
+    if (listItem) {
+      const depth = Math.floor(listItem[1].replace(/\t/g, "  ").length / 2);
+      const marker = /^\d/.test(listItem[2]) ? `${listItem[2]} ` : "- ";
+      result.push({
+        text: `${"  ".repeat(depth)}${marker}${cleanMarkdownInline(listItem[3])}`,
+        style: { type: "list", depth },
+      });
+      continue;
+    }
+
+    result.push({
+      text: cleanMarkdownInline(rawLine),
+      style: { ...DEFAULT_LINE_STYLE },
+    });
+  }
+
+  return result;
+}
+
+function getLinePresentationStyle(lineStyle, paragraphSpacingPx) {
+  const style = lineStyle || DEFAULT_LINE_STYLE;
+  if (style.type === "heading") {
+    const scale = style.depth <= 1 ? 1.45 : style.depth === 2 ? 1.28 : 1.12;
+    return {
+      fontSize: `${scale}em`,
+      fontWeight: 700,
+      marginTop: `${Math.max(10, paragraphSpacingPx)}px`,
+      marginBottom: `${Math.max(6, paragraphSpacingPx / 2)}px`,
+      letterSpacing: 0,
+    };
+  }
+  if (style.type === "quote") {
+    return {
+      borderLeft: "4px solid currentColor",
+      paddingLeft: "14px",
+      opacity: 0.82,
+      fontStyle: "italic",
+    };
+  }
+  if (style.type === "code") {
+    return {
+      fontFamily:
+        'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace',
+      opacity: 0.9,
+    };
+  }
+  if (style.type === "list") {
+    return {
+      paddingLeft: `${8 + Math.min(style.depth || 0, 4) * 18}px`,
+    };
+  }
+  return {};
+}
+
 // One rendered line of the script, memoized.
 // Why: speech recognition fires a result every ~100-300ms and each one updates
 // currentWordIndex. Before, that re-rendered EVERY word span in the script
@@ -58,6 +184,7 @@ const TeleprompterLine = memo(function TeleprompterLine({
   lineStart,
   activeIndex, // global index of the current word if it is in this line, else -1
   isCoHost, // dimmed, skipped by voice tracking
+  lineStyle,
   showHighlight,
   highlightColor,
   textColor,
@@ -66,6 +193,10 @@ const TeleprompterLine = memo(function TeleprompterLine({
   onWordClick,
 }) {
   const isCurrentLine = activeIndex >= 0;
+  const presentationStyle = getLinePresentationStyle(
+    lineStyle,
+    paragraphSpacingPx
+  );
   return (
     <div
       id={`line-${lineIdx}`}
@@ -79,6 +210,7 @@ const TeleprompterLine = memo(function TeleprompterLine({
         outline: isCurrentLine ? `1px dashed ${highlightColor}33` : "none",
         opacity: isCoHost ? 0.45 : 1,
         fontStyle: isCoHost ? "italic" : "normal",
+        ...presentationStyle,
       }}
     >
       {words.map((word, i) => {
@@ -313,6 +445,7 @@ Happy recording!`);
   const [showCenterLine, setShowCenterLine] = useState(false);
   const [showAim, setShowAim] = useState(true);
   const [showHighlight, setShowHighlight] = useState(true);
+  const [micStatus, setMicStatus] = useState("");
   const [aimOffsetX, setAimOffsetX] = useState(0);
   const [aimOffsetY, setAimOffsetY] = useState(0);
   // Aim marker style/color + hideable "Listening" pill — added after user
@@ -350,6 +483,13 @@ Happy recording!`);
       return true;
     }
   });
+  const [showSupportPrompts, setShowSupportPrompts] = useState(() => {
+    try {
+      return localStorage.getItem(SUPPORT_PROMPTS_KEY) !== "false";
+    } catch (_) {
+      return true;
+    }
+  });
   const [isIOSChrome, setIsIOSChrome] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -377,8 +517,10 @@ Happy recording!`);
   ];
   const [paragraphHighlightOpacity, setParagraphHighlightOpacity] =
     useState(0.12);
+  const [textFormat, setTextFormat] = useState("plain");
   const [linesWords, setLinesWords] = useState([]);
   const [lineStartIndex, setLineStartIndex] = useState([]);
+  const [lineStyles, setLineStyles] = useState([]);
   const [showEditor, setShowEditor] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -427,6 +569,13 @@ Happy recording!`);
   const lastMicResultTsRef = useRef(performance.now());
   const micForceStoppedRef = useRef(false);
   const micRestartTimeoutRef = useRef(null);
+  const micStatusRef = useRef("");
+
+  const updateMicStatus = (message) => {
+    if (micStatusRef.current === message) return;
+    micStatusRef.current = message;
+    setMicStatus(message);
+  };
 
   function hardStopRecognition() {
     try {
@@ -475,6 +624,7 @@ Happy recording!`);
     rec.onstart = () => {
       recognizingRef.current = true;
       micForceStoppedRef && (micForceStoppedRef.current = false);
+      updateMicStatus("Listening. Start speaking when ready.");
     };
 
     rec.onresult = (event) => {
@@ -496,6 +646,7 @@ Happy recording!`);
       // Split σε tokens ΑΜΑ υπάρχει τουλάχιστον μία λέξη
       const tokens = transcript.split(/\s+/).map(normalizeWord).filter(Boolean);
       if (tokens.length === 0) return;
+      updateMicStatus("Speech detected. Matching script...");
 
       const isFinal = !!(chosen && chosen.isFinal);
 
@@ -545,13 +696,19 @@ Happy recording!`);
 
     rec.onerror = (event) => {
       console.error("Speech recognition error:", event.error);
-      if (
-        event.error === "no-speech" ||
-        event.error === "audio-capture" ||
-        event.error === "network" ||
-        event.error === "not-allowed" ||
-        event.error === "service-not-allowed"
-      ) {
+      const error = event.error || "unknown";
+      updateMicStatus(
+        SPEECH_ERROR_MESSAGES[error] ||
+          `Speech recognition error: ${error}. Check Chrome console for details.`
+      );
+
+      if (FATAL_SPEECH_ERRORS.has(error)) {
+        setIsListening(false);
+        hardStopRecognition();
+        return;
+      }
+
+      if (error === "no-speech") {
         if (isListeningRef.current && !micForceStoppedRef.current) {
           if (micRestartTimeoutRef.current)
             clearTimeout(micRestartTimeoutRef.current);
@@ -645,6 +802,7 @@ Happy recording!`);
     paragraphHighlightOpacity: 0.2,
     language: "en-US",
     mirrorX: false,
+    showSupportPrompts: true,
   };
 
   const resetSettingsToDefault = () => {
@@ -674,8 +832,10 @@ Happy recording!`);
     setParagraphHighlightOpacity(defaultSettings.paragraphHighlightOpacity);
     setLanguage(defaultSettings.language);
     setMirrorX(defaultSettings.mirrorX);
+    setShowSupportPrompts(defaultSettings.showSupportPrompts);
     try {
       localStorage.removeItem(SETTINGS_KEY);
+      localStorage.removeItem(SUPPORT_PROMPTS_KEY);
     } catch (_) {}
   };
 
@@ -917,6 +1077,10 @@ Happy recording!`);
         setParagraphHighlightOpacity(s.paragraphHighlightOpacity);
       if (s.language) setLanguage(s.language);
       if (s.mirrorX != null) setMirrorX(!!s.mirrorX);
+      if (s.showSupportPrompts != null)
+        setShowSupportPrompts(!!s.showSupportPrompts);
+      if (s.textFormat === "markdown" || s.textFormat === "plain")
+        setTextFormat(s.textFormat);
     } catch (_) {}
   }, []);
 
@@ -954,11 +1118,17 @@ Happy recording!`);
         paragraphHighlightOpacity,
         language,
         mirrorX,
+        textFormat,
+        showSupportPrompts,
 
         text,
       };
       try {
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+        localStorage.setItem(
+          SUPPORT_PROMPTS_KEY,
+          showSupportPrompts ? "true" : "false"
+        );
       } catch (_) {}
     }, 400);
     return () => clearTimeout(timer);
@@ -989,6 +1159,8 @@ Happy recording!`);
     paragraphHighlightOpacity,
     language,
     mirrorX,
+    textFormat,
+    showSupportPrompts,
     text,
   ]);
 
@@ -1040,6 +1212,7 @@ Happy recording!`);
     try {
       if (ext === "txt" || ext === "md" || ext === "markdown") {
         const txt = await file.text();
+        setTextFormat(ext === "txt" ? "plain" : "markdown");
         setText(txt);
         setShowEditor(true);
       } else {
@@ -1100,7 +1273,15 @@ Happy recording!`);
   };
 
   useEffect(() => {
-    const lines = text.split(/\r?\n/);
+    const parsedLines =
+      textFormat === "markdown"
+        ? markdownToTeleprompterLines(text)
+        : text.split(/\r?\n/).map((line) => ({
+            text: line,
+            style: { ...DEFAULT_LINE_STYLE },
+          }));
+    const lines = parsedLines.map((line) => line.text);
+    const styles = parsedLines.map((line) => line.style);
     linesRawRef.current = lines;
     const linesWords = lines.map((ln) =>
       ln.split(/\s+/).filter((w) => w.trim().length > 0)
@@ -1127,8 +1308,9 @@ Happy recording!`);
     skippableWordsRef.current = skippable;
     setLinesWords(linesWords);
     setLineStartIndex(starts);
+    setLineStyles(styles);
     setLineIsCoHost(lineIsCoHostArr);
-  }, [text]);
+  }, [text, textFormat]);
 
   useEffect(() => {
     if (!hasInitialCenterRef.current && linesWords && linesWords.length > 0) {
@@ -1673,6 +1855,7 @@ Happy recording!`);
       // Fully tear down immediately and release mic permissions
       setIsListening(false);
       setIsPlaying(false);
+      updateMicStatus("Speech recognition stopped.");
       hardStopRecognition();
     } else {
       try {
@@ -1682,6 +1865,7 @@ Happy recording!`);
             micForceStoppedRef.current = false;
           } catch (_) {}
         }
+        updateMicStatus("Starting speech recognition...");
         safeRestartRecognition(150);
         setIsListening(true);
         setIsPlaying(false);
@@ -2639,32 +2823,34 @@ Happy recording!`);
             </svg>
           </IconButton>
 
-          <IconButton uiOpacity={uiOpacity}
-            onClick={() =>
-              window.open("https://buymeacoffee.com/nrjsoeq61", "_blank")
-            }
-            ariaLabel="Buy Me a Coffee"
-            tooltipTitle="Buy Me a Coffee"
-            tooltipDesc="Support development with a coffee"
-            style={{ background: "#0f0f0f" }}
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="white"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          {showSupportPrompts && (
+            <IconButton uiOpacity={uiOpacity}
+              onClick={() =>
+                window.open("https://buymeacoffee.com/nrjsoeq61", "_blank")
+              }
+              ariaLabel="Buy Me a Coffee"
+              tooltipTitle="Buy Me a Coffee"
+              tooltipDesc="Support development with a coffee"
+              style={{ background: "#0f0f0f" }}
             >
-              <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
-              <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
-              <line x1="6" y1="1" x2="6" y2="4" />
-              <line x1="10" y1="1" x2="10" y2="4" />
-              <line x1="14" y1="1" x2="14" y2="4" />
-            </svg>
-          </IconButton>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+                <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+                <line x1="6" y1="1" x2="6" y2="4" />
+                <line x1="10" y1="1" x2="10" y2="4" />
+                <line x1="14" y1="1" x2="14" y2="4" />
+              </svg>
+            </IconButton>
+          )}
 
           <IconButton uiOpacity={uiOpacity}
             onClick={() => (window.location.href = "./index.html")}
@@ -4150,6 +4336,38 @@ Happy recording!`);
                     marginBottom: "8px",
                   }}
                 >
+                  Support prompts: {showSupportPrompts ? "Visible" : "Hidden"}
+                </label>
+                <button
+                  onClick={() => {
+                    const next = !showSupportPrompts;
+                    setShowSupportPrompts(next);
+                    if (!next) setShowSupportMessage(false);
+                  }}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid #555",
+                    background: showSupportPrompts ? "#2e7d32" : "#37474f",
+                    color: "white",
+                    cursor: "pointer",
+                  }}
+                  aria-label="Toggle Support Prompts"
+                  title="Hide or show Buy Me a Coffee buttons and support messages"
+                >
+                  {showSupportPrompts ? "Hide everywhere" : "Show"}
+                </button>
+              </div>
+
+              <div style={{ marginBottom: "20px" }}>
+                <label
+                  style={{
+                    color: "white",
+                    display: "block",
+                    marginBottom: "8px",
+                  }}
+                >
                   Text centering offset (top/bottom): {centerPaddingVh}vh
                 </label>
                 <div
@@ -4362,6 +4580,7 @@ Happy recording!`);
                 lineStart={lineStart}
                 activeIndex={activeIndex}
                 isCoHost={!!(skipCoHostLines && lineIsCoHost[lineIdx])}
+                lineStyle={lineStyles[lineIdx]}
                 showHighlight={showHighlight}
                 highlightColor={highlightColor}
                 textColor={textColor}
@@ -4406,31 +4625,54 @@ Happy recording!`);
       )}
 
       {/* Status Indicator (hideable in settings — can distract on camera) */}
-      {isListening && showListeningIndicator && (
+      {showListeningIndicator && (isListening || micStatus) && (
         <div
           style={{
             position: "fixed",
             bottom: "30px",
             left: "50%",
             transform: "translateX(-50%)",
-            background: "rgba(244, 67, 54, 0.9)",
+            background: isListening
+              ? "rgba(244, 67, 54, 0.9)"
+              : "rgba(38, 50, 56, 0.92)",
             color: "white",
-            padding: "15px 30px",
-            borderRadius: "50px",
+            padding: "12px 24px",
+            borderRadius: "18px",
             display: "flex",
             alignItems: "center",
             gap: "10px",
             fontWeight: "bold",
-            animation: "pulse 1.5s infinite",
+            animation: isListening ? "pulse 1.5s infinite" : "none",
+            maxWidth: "min(90vw, 620px)",
+            minWidth: "min(90vw, 360px)",
+            minHeight: "52px",
+            textAlign: "left",
           }}
         >
           <span aria-hidden="true">🎙️</span>
-          Listening...
+          <span>
+            <span>{isListening ? "Listening..." : "Microphone status"}</span>
+            {micStatus && (
+              <span
+                role="status"
+                style={{
+                  display: "block",
+                  marginTop: "3px",
+                  fontSize: "12px",
+                  fontWeight: "normal",
+                  lineHeight: 1.35,
+                  opacity: 0.95,
+                }}
+              >
+                {micStatus}
+              </span>
+            )}
+          </span>
         </div>
       )}
 
       {/* Support Message */}
-      {showSupportMessage && (
+      {showSupportPrompts && showSupportMessage && (
         <div
           style={{
             position: "fixed",
