@@ -137,6 +137,9 @@ const UI_TEXT = {
     followCurrentWord: "Follow current word",
     enabled: "Enabled",
     disabled: "Disabled",
+    toolbarPosition: "Toolbar position",
+    top: "Top",
+    bottom: "Bottom",
     textOpacity: "Text opacity",
     aimOpacity: "Aim opacity",
     paragraphHighlightOpacity: "Paragraph highlight opacity",
@@ -288,6 +291,9 @@ const UI_TEXT = {
     followCurrentWord: "Seguir palabra actual",
     enabled: "Activado",
     disabled: "Desactivado",
+    toolbarPosition: "Posición de la barra",
+    top: "Arriba",
+    bottom: "Abajo",
     textOpacity: "Opacidad del texto",
     aimOpacity: "Opacidad del marcador",
     paragraphHighlightOpacity: "Opacidad del resaltado de párrafo",
@@ -775,6 +781,7 @@ Happy recording!`);
   const [sidePaddingVw, setSidePaddingVw] = useState(10);
   const [textAlignStyle, setTextAlignStyle] = useState("left");
   const [mirrorX, setMirrorX] = useState(false);
+  const [toolbarPosition, setToolbarPosition] = useState("top"); // top | bottom
   const [language, setLanguage] = useState("en-US");
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const languageBtnRef = useRef(null);
@@ -1118,6 +1125,7 @@ Happy recording!`);
     paragraphHighlightOpacity: 0.2,
     language: "en-US",
     mirrorX: false,
+    toolbarPosition: "top",
     showSupportPrompts: true,
     uiLanguage: "en",
   };
@@ -1149,6 +1157,7 @@ Happy recording!`);
     setParagraphHighlightOpacity(defaultSettings.paragraphHighlightOpacity);
     setLanguage(defaultSettings.language);
     setMirrorX(defaultSettings.mirrorX);
+    setToolbarPosition(defaultSettings.toolbarPosition);
     setShowSupportPrompts(defaultSettings.showSupportPrompts);
     setUiLanguage(defaultSettings.uiLanguage);
     try {
@@ -1408,6 +1417,8 @@ Happy recording!`);
         setParagraphHighlightOpacity(s.paragraphHighlightOpacity);
       if (s.language) setLanguage(s.language);
       if (s.mirrorX != null) setMirrorX(!!s.mirrorX);
+      if (s.toolbarPosition === "top" || s.toolbarPosition === "bottom")
+        setToolbarPosition(s.toolbarPosition);
       if (s.showSupportPrompts != null)
         setShowSupportPrompts(!!s.showSupportPrompts);
       if (s.uiLanguage === "es" || s.uiLanguage === "en")
@@ -1451,6 +1462,7 @@ Happy recording!`);
         paragraphHighlightOpacity,
         language,
         mirrorX,
+        toolbarPosition,
         textFormat,
         showSupportPrompts,
         uiLanguage,
@@ -1494,6 +1506,7 @@ Happy recording!`);
     paragraphHighlightOpacity,
     language,
     mirrorX,
+    toolbarPosition,
     textFormat,
     showSupportPrompts,
     uiLanguage,
@@ -2758,13 +2771,19 @@ Happy recording!`);
       <div
         style={{
           position: "fixed",
-          top: 0,
+          top: toolbarPosition === "top" ? 0 : "auto",
+          bottom: toolbarPosition === "bottom" ? 0 : "auto",
           left: 0,
           right: 0,
           background: `rgba(0,0,0,${Math.min(1, uiOpacity)})`,
           padding: "15px",
           zIndex: 1,
-          borderBottom: "2px solid rgba(255,255,255,0.1)",
+          borderBottom: toolbarPosition === "top"
+            ? "2px solid rgba(255,255,255,0.1)"
+            : "none",
+          borderTop: toolbarPosition === "bottom"
+            ? "2px solid rgba(255,255,255,0.1)"
+            : "none",
         }}
       >
         {toolbarHints.left && (
@@ -3904,6 +3923,38 @@ Happy recording!`);
                   value={uiOpacity}
                   onChange={setUiOpacity}
                 />
+              </div>
+
+              <div style={{ marginBottom: "20px" }}>
+                <label
+                  style={{
+                    color: "white",
+                    display: "block",
+                    marginBottom: "8px",
+                  }}
+                >
+                  {t("toolbarPosition")}: {t(toolbarPosition)}
+                </label>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  {["top", "bottom"].map((pos) => (
+                    <button
+                      key={pos}
+                      onClick={() => setToolbarPosition(pos)}
+                      style={{
+                        flex: 1,
+                        padding: "10px 12px",
+                        borderRadius: "8px",
+                        border: "1px solid #555",
+                        background:
+                          toolbarPosition === pos ? "#2e7d32" : "#37474f",
+                        color: "white",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {t(pos)}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div style={{ marginBottom: "20px" }}>
