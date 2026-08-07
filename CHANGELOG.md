@@ -17,11 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Voice recognition now shows visible microphone diagnostics instead of silently restarting when Chrome reports no speech, missing microphone input, blocked permissions, or speech service errors.
 - Settings now include a Support prompts toggle that hides Buy Me a Coffee buttons and support messages across the app and landing page.
 - The teleprompter app now has an interface language setting for English and Spanish, independent from the speech-recognition language.
+- File imports (.txt/.md) now automatically open the Add Script dialog pre-filled with the filename and imported content — one click to save to the script library.
 
 ### Changed
 
 - Voice recognition is no longer hard-blocked on iOS. On iOS 14.5+ (Safari/WebKit) it now attempts to use the Web Speech API with automatic restart on pause. A dismissible info banner replaces the old error banner.
 - Settings sliders (font size, speed, opacities, offsets, etc.) now use the Pointer Events API instead of mouse-only listeners, so dragging them works on touch devices, not just with a mouse.
+- The Share button has been hidden from the script library UI — the sharing feature and `/api/share` endpoint remain in the codebase for Cloudflare Pages deployments.
 
 ### Fixed
 
