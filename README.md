@@ -213,6 +213,18 @@ The `dist/` output is ready for any static hosting. Includes:
 
 Deploy to Cloudflare Pages, Vercel, Netlify, or any static host.
 
+### Deployment at teleprompter.edutictac.es (nginx)
+
+The app is also served from `teleprompter.edutictac.es` (VPS aulessocarrades,
+nginx). The site is a plain static host: nginx `try_files` falls back to
+`index.html`, `sw.js` is served normally, and the SPA routes work.
+
+⚠️ **`/api/share` (script sharing) is NOT served on nginx** — that endpoint
+is a Cloudflare Pages Function backed by a KV namespace. On this deploy the
+Share button reports that sharing isn't configured; everything else
+(voice autoscroll, editor, PWA) works. Redeploying means rsync'ing `dist/`
+to `/var/www/teleprompter/`.
+
 ### Cloudflare extras (optional, free tier)
 
 - **Script sharing** (`functions/api/share/`) needs a KV namespace bound to
