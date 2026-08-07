@@ -4198,7 +4198,7 @@ Happy recording!`);
                   {t("textCenteringOffset")}: {centerPaddingVh}vh
                 </label>
                 <CustomSlider
-                  min={20}
+                  min={0}
                   max={60}
                   value={centerPaddingVh}
                   onChange={setCenterPaddingVh}
