@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Toolbar position setting: the control bar can now be placed at the top or bottom of the screen, persisted in settings.
+- Text centering offset slider now goes down to 0vh, allowing text to be placed flush with the top of the viewport (was 20vh minimum).
+- Alternative deployment at `teleprompter.edutictac.es` (nginx on aulessocarrades VPS) documented in README.
 - Markdown imports now render as teleprompter-friendly text: headings, lists, quotes, links, inline code, emphasis, and code blocks are cleaned up for reading while the editor keeps the original Markdown source.
 - The Script Editor now exposes the existing `.txt`/`.md`/`.markdown` file import control through an Import button.
 - Voice recognition now shows visible microphone diagnostics instead of silently restarting when Chrome reports no speech, missing microphone input, blocked permissions, or speech service errors.
@@ -17,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Voice recognition is no longer hard-blocked on iOS. On iOS 14.5+ (Safari/WebKit) it now attempts to use the Web Speech API with automatic restart on pause. A dismissible info banner replaces the old error banner.
 - Settings sliders (font size, speed, opacities, offsets, etc.) now use the Pointer Events API instead of mouse-only listeners, so dragging them works on touch devices, not just with a mouse.
 
 ### Fixed
