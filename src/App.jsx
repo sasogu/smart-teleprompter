@@ -1567,6 +1567,12 @@ Happy recording!`);
         setTextFormat(ext === "txt" ? "plain" : "markdown");
         setText(txt);
         setShowEditor(true);
+        setAddScriptName(file.name.replace(/\.(txt|md|markdown)$/i, ""));
+        setAddScriptText(txt);
+        setAddScriptLanguage(language);
+        setEditScriptId(null);
+        setScriptFormTouched(false);
+        setShowAddScript(true);
       } else {
         alert(t("supportedFileTypes"));
       }
@@ -3469,25 +3475,6 @@ Happy recording!`);
                               }}
                             >
                               {t("edit")}
-                            </button>
-                            <button
-                              onClick={() => shareScript(script)}
-                              disabled={shareBusyId === script.id}
-                              title="Create a link to open this script on another device (expires in 30 days)"
-                              style={{
-                                padding: "5px 10px",
-                                borderRadius: "5px",
-                                border: "1px solid #2e7d32",
-                                background: "transparent",
-                                color: "#81c784",
-                                cursor:
-                                  shareBusyId === script.id
-                                    ? "wait"
-                                    : "pointer",
-                                fontSize: "12px",
-                              }}
-                            >
-                              {shareBusyId === script.id ? t("shareBusy") : t("share")}
                             </button>
                             <button
                               onClick={() => setDeleteScriptConfirm(script)}
