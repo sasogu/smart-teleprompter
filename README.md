@@ -25,12 +25,14 @@ A free, open-source teleprompter application that uses real-time speech recognit
 
 ### 🎨 Customization
 
-- **Adjustable font size** (16px - 72px)
+- **Adjustable font size** (16px - 80px)
 - **Custom colors** for background, text, and highlights
-- **Line height** and **spacing** controls
+- **Line height** and **paragraph spacing** controls
 - **Text alignment** (left, center, right)
 - **Mirror mode** for camera setups
-- **Opacity controls** for text and UI elements
+- **Toolbar position** — place the control bar at the top or bottom of the screen
+- **Text centering offset** (0vh–60vh) — slide text as close to the top as you need
+- **Opacity controls** for text, aim marker, paragraph highlight, and UI buttons
 - **Aim marker styles** — crosshair, dot, or camera-frame in 5 colors
 - **Hideable "Listening" indicator** for clean on-camera recording
 
@@ -151,9 +153,9 @@ npm run preview   # preview the production build
 - 🌐 **Stable Internet Connection** recommended
 - 🎤 **Microphone Access** required for voice recognition
 
-**Mobile Limitations:**
+**Mobile:**
 
-- 📱 **iPhone/iPad**: Only Auto-scroll mode works (no voice recognition)
+- 📱 **iPhone/iPad (iOS 14.5+)**: Voice recognition works (Safari, Web Speech API), but may pause after each phrase — the app auto-restarts it. Auto-scroll mode (P) is the most reliable option on iOS.
 - 📱 **Android**: Voice recognition may work but performance varies
 - 🌐 **Mobile Browsers**: Limited Web Speech API support
 
@@ -161,7 +163,7 @@ npm run preview   # preview the production build
 
 - ✅ **Chrome/Chromium** (recommended — best performance)
 - ✅ **Edge** (good performance)
-- ⚠️ **Safari** (limited functionality, no voice recognition on iOS)
+- ⚠️ **Safari** (speech recognition supported on iOS 14.5+, may have intermittent pauses)
 - ❌ **Firefox** (no Web Speech API support)
 
 ## 🔧 Configuration
@@ -182,8 +184,8 @@ npm run preview   # preview the production build
 ### Performance Settings
 
 - **Scroll Speed**: Adjust how fast the text scrolls
-- **Center Padding**: Control how much space around the reading line
-- **Aim Indicator**: Show/hide the reading line indicator
+- **Center Padding**: Control text vertical position (0vh–60vh), down to completely flush with the top
+- **Aim Indicator**: Show/hide the reading line indicator, customizable style and color
 
 ## 🏗️ Project Structure
 
