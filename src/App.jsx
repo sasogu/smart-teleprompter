@@ -166,9 +166,10 @@ const UI_TEXT = {
     highlightColor: "Highlight color",
     listening: "Listening...",
     microphoneStatus: "Microphone status",
-    iosLimitation: "iOS Limitation",
-    iosSpeechUnavailable: "Speech recognition doesn't work on iOS devices.",
-    iosAutoPlayOnly: "Only Auto Play mode is available.",
+    iosLimitation: "iOS limitations",
+    iosSpeechUnavailable: "Voice recognition supports iOS 14.5+ (Safari). If it stops or behaves erratically, use auto-scroll mode (P) instead.",
+    iosAutoPlayOnly: "Speech recognition may pause after each phrase on iOS — the app auto-restarts it, but auto-scroll mode (P) is the most reliable option.",
+    iosBannerDismiss: "Got it",
     deleteScriptTitle: "Delete Script?",
     deleteScriptPrompt: "Are you sure you want to delete",
     cancel: "Cancel",
@@ -320,9 +321,10 @@ const UI_TEXT = {
     highlightColor: "Color del resaltado",
     listening: "Escuchando...",
     microphoneStatus: "Estado del micrófono",
-    iosLimitation: "Limitación en iOS",
-    iosSpeechUnavailable: "El reconocimiento de voz no funciona en dispositivos iOS.",
-    iosAutoPlayOnly: "Solo está disponible el modo Autoavance.",
+    iosLimitation: "Limitaciones en iOS",
+    iosSpeechUnavailable: "El reconocimiento de voz funciona en iOS 14.5+ (Safari). Si se detiene o falla, usa el modo de autoavance (P).",
+    iosAutoPlayOnly: "La escucha puede pausarse tras cada frase en iOS — la app la reinicia automáticamente, pero el autoavance (P) es la opción más fiable.",
+    iosBannerDismiss: "Entendido",
     deleteScriptTitle: "¿Eliminar guion?",
     deleteScriptPrompt: "¿Seguro que quieres eliminar",
     cancel: "Cancelar",
@@ -686,7 +688,7 @@ export default function SmartTeleprompter() {
 
 ⚠️ IMPORTANT COMPATIBILITY NOTES:
 • For BEST EXPERIENCE: Use Desktop/Laptop with Chrome browser
-• iPhone/iPad: Only Auto-scroll mode works (no voice recognition)
+• iPhone/iPad (iOS 14.5+): Voice recognition works in Safari but may pause after each phrase
 • Android: Voice recognition may work but performance varies
 • Mobile browsers have limited Web Speech API support
 
@@ -727,7 +729,7 @@ SUPPORTED LANGUAGES
 
 TIPS FOR BEST RESULTS
 - Use Chrome browser on Desktop/Laptop for optimal performance
-- iPhone/iPad users: Use Auto-scroll mode (P key) - voice recognition not supported
+- iPhone/iPad users: Voice recognition works on iOS 14.5+, but auto-scroll mode (P key) is more reliable
 - Android users: Voice recognition may work but desktop recommended
 - External microphones provide better accuracy than built-in mics
 - Minimize background noise for improved tracking
@@ -811,7 +813,8 @@ Happy recording!`);
       return "en";
     }
   });
-  const [isIOSChrome, setIsIOSChrome] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [iosBannerDismissed, setIosBannerDismissed] = useState(false);
   const t = (key) => UI_TEXT[uiLanguage]?.[key] || UI_TEXT.en[key] || key;
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -2184,14 +2187,6 @@ Happy recording!`);
   }, []);
 
   const toggleListening = () => {
-    // Prevent speech recognition on iOS devices
-    if (isIOSChrome) {
-      alert(
-        "Speech recognition doesn't work on iOS devices. Only Auto Play mode is available."
-      );
-      return;
-    }
-
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
       alert(
@@ -2306,12 +2301,10 @@ Happy recording!`);
   };
 
   // Global keyboard shortcuts (after handlers are defined)
-  // Detect iOS Chrome
+  // Detect iOS
   useEffect(() => {
-    const userAgent = navigator.userAgent;
-    const isIOS = /iPad|iPhone|iPod/.test(userAgent);
-    const isChrome = /Chrome/.test(userAgent);
-    setIsIOSChrome(isIOS && isChrome);
+    const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    setIsIOS(isIOSDevice);
   }, []);
 
   // Load language from localStorage after component mounts
@@ -4373,32 +4366,47 @@ Happy recording!`);
         </div>
       </div>
 
-      {/* iOS Chrome Warning */}
-      {isIOSChrome && (
+      {/* iOS Warning */}
+      {isIOS && !iosBannerDismissed && (
         <div
           style={{
             position: "fixed",
             top: "80px",
             left: "50%",
             transform: "translateX(-50%)",
-            background: "rgba(255, 152, 0, 0.95)",
+            background: "rgba(33, 33, 33, 0.95)",
             color: "white",
             padding: "15px 20px",
             borderRadius: "8px",
             maxWidth: "90%",
             textAlign: "center",
             zIndex: 2000,
-            border: "2px solid #ff9800",
+            border: "2px solid #555",
           }}
         >
           <div style={{ fontWeight: "bold", marginBottom: "8px" }}>
-            ⚠️ {t("iosLimitation")}
+            {t("iosLimitation")}
           </div>
-          <div style={{ fontSize: "14px" }}>
+          <div style={{ fontSize: "14px", lineHeight: 1.5 }}>
             {t("iosSpeechUnavailable")}
             <br />
             {t("iosAutoPlayOnly")}
           </div>
+          <button
+            onClick={() => setIosBannerDismissed(true)}
+            style={{
+              marginTop: "10px",
+              padding: "6px 16px",
+              borderRadius: "6px",
+              border: "1px solid #555",
+              background: "#37474f",
+              color: "white",
+              cursor: "pointer",
+              fontSize: "13px",
+            }}
+          >
+            {t("iosBannerDismiss")}
+          </button>
         </div>
       )}
 
