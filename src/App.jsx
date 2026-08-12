@@ -388,6 +388,7 @@ Happy recording!`);
             maxDistance: RESYNC_NEAR_DISTANCE,
             endIndex: resyncEndIndex,
             minNGram: 3,
+            minExact: 2,
             minStrongLen: 4,
           }
         );

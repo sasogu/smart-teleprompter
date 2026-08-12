@@ -133,4 +133,22 @@ describe("findResyncMatch", () => {
       findResyncMatch(text, words("hola buenos dias me"), 3, { minNGram: 3 })
     ).toBe(text.indexOf("me"));
   });
+
+  it("re-syncs when one word of the 3-gram is misrecognized", () => {
+    // recognition heard "cuatr" (truncated) instead of "cuatro"; the other
+    // two exact words still anchor the jump (minExact 2).
+    const text = words("uno dos tres cuatro cinco seis");
+    const spoken = words("dos tres cuatr");
+    expect(
+      findResyncMatch(text, spoken, 0, { minNGram: 3, minExact: 2 })
+    ).toBe(3);
+  });
+
+  it("does not re-sync when two words of the 3-gram are misrecognized", () => {
+    const text = words("uno dos tres cuatro cinco seis");
+    const spoken = words("dos tress cuatr");
+    expect(
+      findResyncMatch(text, spoken, 0, { minNGram: 3, minExact: 2 })
+    ).toBe(-1);
+  });
 });

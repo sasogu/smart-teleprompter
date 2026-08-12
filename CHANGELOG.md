@@ -5,6 +5,13 @@ All notable changes to Smart Teleprompter will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.2] - 2026-08-12
+
+### Fixed
+
+- Phrase-skip re-sync restored: the strict 3-gram of 2.4.1 made real skips fail because speech recognition rarely transcribes three words exactly. The near paragraph search now accepts a 3-gram with one soft-matched word (2 exact + 1 prefix/contains), so a skipped phrase re-syncs despite recognition errors while a repeated 2-gram still never causes a jump.
+- Service worker cache bumped to `v5`.
+
 ## [2.4.1] - 2026-08-12
 
 ### Fixed
