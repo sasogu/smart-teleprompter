@@ -372,17 +372,23 @@ Happy recording!`);
         // that way a skipped phrase can be matched even while reading
         // fluently without pauses (when final results are rare). A strong
         // word (>=4 chars) is required so filler pairs like "and the" never
-        // trigger a jump. First a wider near window, then the rest of the
-        // script requiring a longer exact n-gram.
+        // trigger a jump, and the near search never leaves the next
+        // paragraph so it cannot jump to a distant section.
         const resyncTokens = tokens.slice(-8);
         const skipWords = skipCoHostRef.current
           ? skippableWordsRef.current
           : null;
+        const resyncEndIndex = getResyncEndIndex(startIndex - 1);
         nextIndex = findResyncMatch(
           normalizedWordsRef.current,
           resyncTokens,
           startIndex,
-          { skipWords, maxDistance: RESYNC_NEAR_DISTANCE, minStrongLen: 4 }
+          {
+            skipWords,
+            maxDistance: RESYNC_NEAR_DISTANCE,
+            endIndex: resyncEndIndex,
+            minStrongLen: 4,
+          }
         );
         if (nextIndex === -1 && resyncTokens.length >= 3) {
           nextIndex = findResyncMatch(
@@ -1470,6 +1476,28 @@ Happy recording!`);
     const start = starts[lineIdx] ?? 0;
     const end = (starts[lineIdx + 1] ?? wordsRef.current.length) - 1;
     return { start, end };
+  };
+
+  // Word index where the NEXT paragraph after the one containing `wIdx`
+  // ends (paragraphs are separated by empty lines). Used to keep phrase-skip
+  // re-sync local: it never jumps further than the following paragraph.
+  const getResyncEndIndex = (wIdx) => {
+    const lines = linesWordsRef.current;
+    const starts = lineStartIndexRef.current;
+    if (!starts || starts.length === 0) return Infinity;
+    let lineIdx = 0;
+    for (let i = 0; i < starts.length; i++) {
+      if (starts[i] <= wIdx) lineIdx = i;
+      else break;
+    }
+    let i = lineIdx + 1;
+    while (i < lines.length && lines[i].length > 0) i++;
+    while (i < lines.length && lines[i].length === 0) i++;
+    while (i < lines.length && lines[i].length > 0) i++;
+    const endLine = Math.min(i, lines.length) - 1;
+    if (endLine < 0) return Infinity;
+    const endWord = (starts[endLine + 1] ?? wordsRef.current.length) - 1;
+    return endWord;
   };
 
   const findNextInLine = (

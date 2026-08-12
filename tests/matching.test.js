@@ -98,4 +98,23 @@ describe("findResyncMatch", () => {
     });
     expect(res).toBe(text.indexOf("now"));
   });
+
+  it("stays within endIndex (never jumps past the next paragraph)", () => {
+    // three paragraphs of 4 words each
+    const text = words(
+      "one two three four five six seven eight nine ten eleven twelve"
+    );
+    const endOfParaTwo = 7; // last word index of the second paragraph
+    expect(
+      findResyncMatch(text, words("seven eight"), 0, { endIndex: endOfParaTwo })
+    ).toBe(7);
+    // the target lives in the third paragraph -> out of range
+    expect(
+      findResyncMatch(text, words("eleven twelve"), 0, {
+        endIndex: endOfParaTwo,
+      })
+    ).toBe(-1);
+    // without the bound it is reachable
+    expect(findResyncMatch(text, words("eleven twelve"), 0)).toBe(11);
+  });
 });

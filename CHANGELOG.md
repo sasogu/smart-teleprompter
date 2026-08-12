@@ -5,6 +5,13 @@ All notable changes to Smart Teleprompter will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-08-12
+
+### Changed
+
+- Phrase-skip re-sync is now limited to the next paragraph (lines separated by a blank line), so skipping a phrase re-syncs locally instead of jumping to a distant section. A strict 3-gram search over the whole script still runs as a last resort for multi-paragraph skips.
+- Service worker cache bumped to `v3` so installed PWAs drop stale assets on the next launch.
+
 ## [2.3.0] - 2026-08-12
 
 ### Added

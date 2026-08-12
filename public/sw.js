@@ -15,7 +15,7 @@
  *  - other same-origin GET (icons, manifest, images) -> stale-while-revalidate
  */
 
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "v3";
 const CACHE_NAME = `tp-cache-${CACHE_VERSION}`;
 
 const PRECACHE_URLS = ["/", "/app.html", "/manifest.json", "/logo.svg"];

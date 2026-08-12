@@ -34,18 +34,28 @@ export const normalizeWord = (input) => {
 // `minNGram` can be raised for far searches to avoid latching onto a
 // repeated short phrase. `minStrongLen` (>0) requires at least one word of
 // the n-gram to be at least that long, so common filler pairs like
-// "and the" never trigger a jump.
+// "and the" never trigger a jump. `endIndex` bounds the search to a given
+// word index (e.g. the end of the next paragraph) to keep jumps local.
 export const findResyncMatch = (
   text,
   tokens,
   startIndex,
-  { skipWords = null, maxDistance = Infinity, minNGram = 2, minStrongLen = 0 } = {}
+  {
+    skipWords = null,
+    maxDistance = Infinity,
+    minNGram = 2,
+    minStrongLen = 0,
+    endIndex = Infinity,
+  } = {}
 ) => {
   const candidates = tokens.filter(Boolean);
   if (candidates.length < minNGram) return -1;
   const total = text.length;
-  const limit =
-    maxDistance === Infinity ? total : Math.min(total, startIndex + maxDistance);
+  const limit = Math.min(
+    total,
+    endIndex === Infinity ? total : endIndex + 1,
+    maxDistance === Infinity ? total : startIndex + maxDistance
+  );
   const maxN = Math.min(4, candidates.length);
   for (let n = maxN; n >= minNGram; n--) {
     const seq = candidates.slice(-n);
