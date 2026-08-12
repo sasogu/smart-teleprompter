@@ -117,4 +117,20 @@ describe("findResyncMatch", () => {
     // without the bound it is reachable
     expect(findResyncMatch(text, words("eleven twelve"), 0)).toBe(11);
   });
+
+  it("does not jump on a 2-gram that repeats in the next paragraph", () => {
+    // "buenos dias" appears in both paragraphs; the speaker is mid-way
+    // through the first one, so a 2-gram re-sync would wrongly land on the
+    // second occurrence. The near re-sync requires a 3-gram, so no jump.
+    const text = words(
+      "hola buenos dias que tal esta usted hoy hola buenos dias me alegro verte"
+    );
+    expect(findResyncMatch(text, words("buenos dias"), 3, { minNGram: 3 })).toBe(
+      -1
+    );
+    // a full repeated 3-gram is still a legitimate (rare) re-sync target
+    expect(
+      findResyncMatch(text, words("hola buenos dias me"), 3, { minNGram: 3 })
+    ).toBe(text.indexOf("me"));
+  });
 });
