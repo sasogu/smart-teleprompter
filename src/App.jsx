@@ -5,7 +5,12 @@ import { SPEECH_ERROR_KEYS, FATAL_SPEECH_ERRORS } from "./constants/speechErrors
 import { SUPPORT_PROMPTS_KEY, UI_LANGUAGE_KEY } from "./constants/keys.js";
 import { UI_TEXT } from "./i18n/translations.js";
 import { cleanMarkdownInline, markdownToTeleprompterLines, getLinePresentationStyle } from "./utils/markdown.js";
-import { tokensEqual, tokensSoftMatch, normalizeWord } from "./utils/matching.js";
+import {
+  tokensEqual,
+  tokensSoftMatch,
+  normalizeWord,
+  findResyncMatch,
+} from "./utils/matching.js";
 import { computeAutoIntervalMs } from "./utils/autoScroll.js";
 import IconButton from "./components/IconButton.jsx";
 import TeleprompterLine from "./components/TeleprompterLine.jsx";
@@ -16,6 +21,11 @@ import TeleprompterLine from "./components/TeleprompterLine.jsx";
 // so shared scripts auto-jump to the presenter's next line no matter how long
 // the co-host's part is.
 const CO_HOST_LINE_RE = /^\s*(>>|@[^\s:]{1,30}:)/;
+
+// Re-sync window (in words) used when the speaker skips a whole phrase and
+// the local per-line search misses. Covers skipping a few phrases/paragraph;
+// beyond that, a stricter far re-sync over the rest of the script kicks in.
+const RESYNC_NEAR_DISTANCE = 200;
 
 const DEFAULT_LINE_STYLE = { type: "paragraph", depth: 0 };
 export default function SmartTeleprompter() {
@@ -352,6 +362,31 @@ Happy recording!`);
           maxSoftSkip: 2, // Πιο aggressive για αγγλικά
         });
         nextIndex = index;
+      }
+      if (nextIndex === -1) {
+        // Re-sync when the speaker skipped a whole phrase: the local search
+        // only covers the current line plus a short lookahead window, so if
+        // the spoken text reappears further ahead it would never match and
+        // the tracker gets stuck. First try a wider near window (covers
+        // skipping a few phrases), then the rest of the script requiring a
+        // longer exact n-gram so we don't latch onto a repeated phrase.
+        const skipWords = skipCoHostRef.current
+          ? skippableWordsRef.current
+          : null;
+        nextIndex = findResyncMatch(
+          normalizedWordsRef.current,
+          tokensToUse,
+          startIndex,
+          { skipWords, maxDistance: RESYNC_NEAR_DISTANCE }
+        );
+        if (nextIndex === -1 && tokensToUse.length >= 3) {
+          nextIndex = findResyncMatch(
+            normalizedWordsRef.current,
+            tokensToUse,
+            startIndex,
+            { skipWords, minNGram: 3, maxDistance: Infinity }
+          );
+        }
       }
       if (nextIndex !== -1) setCurrentWordIndex(nextIndex);
     };

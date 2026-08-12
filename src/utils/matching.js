@@ -23,3 +23,45 @@ export const normalizeWord = (input) => {
     .replace(/[^a-zA-Zα-ω0-9]+/g, "")
     .trim();
 };
+
+// Re-sync when the speaker skips a whole phrase. The normal per-line search
+// plus lookahead window only reach a few words ahead, so if the spoken text
+// reappears further down the script it would never be found. This scans
+// forward from startIndex for an exact n-gram of the latest spoken tokens
+// and returns the index of its last word (-1 if not found).
+// `text` must be the normalized word array; `skipWords` an optional array of
+// booleans (co-host lines) to never match on. Higher n-grams are preferred;
+// `minNGram` can be raised for far searches to avoid latching onto a
+// repeated short phrase.
+export const findResyncMatch = (
+  text,
+  tokens,
+  startIndex,
+  { skipWords = null, maxDistance = Infinity, minNGram = 2 } = {}
+) => {
+  const candidates = tokens.filter(Boolean);
+  if (candidates.length < minNGram) return -1;
+  const total = text.length;
+  const limit =
+    maxDistance === Infinity ? total : Math.min(total, startIndex + maxDistance);
+  const maxN = Math.min(4, candidates.length);
+  for (let n = maxN; n >= minNGram; n--) {
+    const seq = candidates.slice(-n);
+    for (let i = startIndex; i + n <= limit; i++) {
+      let ok = true;
+      for (let k = 0; k < n; k++) {
+        const target = text[i + k];
+        if (
+          !target ||
+          (skipWords && skipWords[i + k]) ||
+          !tokensEqual(target, seq[k])
+        ) {
+          ok = false;
+          break;
+        }
+      }
+      if (ok) return i + (n - 1);
+    }
+  }
+  return -1;
+};
