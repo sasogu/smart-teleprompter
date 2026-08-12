@@ -372,8 +372,10 @@ Happy recording!`);
         // that way a skipped phrase can be matched even while reading
         // fluently without pauses (when final results are rare). A strong
         // word (>=4 chars) is required so filler pairs like "and the" never
-        // trigger a jump, and the near search never leaves the next
-        // paragraph so it cannot jump to a distant section.
+        // trigger a jump. The search NEVER leaves the next paragraph and is
+        // bounded to a short word window: a wrong jump further into the
+        // script is unacceptable, so if there is no local match we simply
+        // do not move.
         const resyncTokens = tokens.slice(-8);
         const skipWords = skipCoHostRef.current
           ? skippableWordsRef.current
@@ -392,14 +394,6 @@ Happy recording!`);
             minStrongLen: 4,
           }
         );
-        if (nextIndex === -1 && resyncTokens.length >= 3) {
-          nextIndex = findResyncMatch(
-            normalizedWordsRef.current,
-            resyncTokens,
-            startIndex,
-            { skipWords, minNGram: 3, maxDistance: Infinity, minStrongLen: 4 }
-          );
-        }
       }
       if (nextIndex !== -1) setCurrentWordIndex(nextIndex);
     };

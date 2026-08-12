@@ -1,6 +1,6 @@
 {
   "name": "smart-teleprompter",
-  "version": "2.4.2",
+  "version": "2.4.3",
   "type": "module",
   "private": true,
   "description": "A free, open-source teleprompter application that uses real-time speech recognition to automatically follow your voice as you read",

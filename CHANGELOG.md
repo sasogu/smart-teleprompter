@@ -5,6 +5,13 @@ All notable changes to Smart Teleprompter will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.3] - 2026-08-12
+
+### Changed
+
+- Removed the whole-script far re-sync: a repeated phrase in a distant paragraph could trigger a jump of several paragraphs, which is unacceptable during a live reading. The re-sync now never leaves the next paragraph (bounded to 200 words); if there is no local match the tracker simply does not move. Use R (reset) or the toolbar to reposition manually.
+- Service worker cache bumped to `v6`.
+
 ## [2.4.2] - 2026-08-12
 
 ### Fixed
