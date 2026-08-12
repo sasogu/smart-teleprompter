@@ -367,24 +367,29 @@ Happy recording!`);
         // Re-sync when the speaker skipped a whole phrase: the local search
         // only covers the current line plus a short lookahead window, so if
         // the spoken text reappears further ahead it would never match and
-        // the tracker gets stuck. First try a wider near window (covers
-        // skipping a few phrases), then the rest of the script requiring a
-        // longer exact n-gram so we don't latch onto a repeated phrase.
+        // the tracker gets stuck. Use the ACCUMULATED transcript of the
+        // current result (not the single-token interim shortcut above) —
+        // that way a skipped phrase can be matched even while reading
+        // fluently without pauses (when final results are rare). A strong
+        // word (>=4 chars) is required so filler pairs like "and the" never
+        // trigger a jump. First a wider near window, then the rest of the
+        // script requiring a longer exact n-gram.
+        const resyncTokens = tokens.slice(-8);
         const skipWords = skipCoHostRef.current
           ? skippableWordsRef.current
           : null;
         nextIndex = findResyncMatch(
           normalizedWordsRef.current,
-          tokensToUse,
+          resyncTokens,
           startIndex,
-          { skipWords, maxDistance: RESYNC_NEAR_DISTANCE }
+          { skipWords, maxDistance: RESYNC_NEAR_DISTANCE, minStrongLen: 4 }
         );
-        if (nextIndex === -1 && tokensToUse.length >= 3) {
+        if (nextIndex === -1 && resyncTokens.length >= 3) {
           nextIndex = findResyncMatch(
             normalizedWordsRef.current,
-            tokensToUse,
+            resyncTokens,
             startIndex,
-            { skipWords, minNGram: 3, maxDistance: Infinity }
+            { skipWords, minNGram: 3, maxDistance: Infinity, minStrongLen: 4 }
           );
         }
       }
@@ -4471,6 +4476,16 @@ Happy recording!`);
                 </kbd>
               </div>
             ))}
+            <div
+              style={{
+                textAlign: "center",
+                color: "#888",
+                fontSize: "12px",
+                marginTop: "16px",
+              }}
+            >
+              Smart Teleprompter v{__APP_VERSION__}
+            </div>
           </div>
         </div>
       )}

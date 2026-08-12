@@ -63,4 +63,39 @@ describe("findResyncMatch", () => {
   it("returns -1 when the spoken text is not in the script", () => {
     expect(findResyncMatch(TEXT, words("completely off script"), 1)).toBe(-1);
   });
+
+  it("matches the accumulated interim transcript (fluent skip, no final)", () => {
+    // During fluent reading only the last spoken word reaches the matcher,
+    // but the accumulated transcript of the current interim result holds the
+    // full phrase, which is what re-sync uses.
+    expect(
+      findResyncMatch(TEXT, words("another phrase with some words that"), 1)
+    ).toBe(TEXT.indexOf("that"));
+  });
+
+  it("does not jump on a short filler pair when a strong word is required", () => {
+    const text = words("and the cat sat on the mat and the dog jumped");
+    // "and the" appears twice; without a strong word guard a jump to the
+    // second occurrence would be wrong.
+    expect(
+      findResyncMatch(text, words("and the"), 1, { minStrongLen: 4 })
+    ).toBe(-1);
+    // but a 3-gram containing a strong word is fine
+    expect(
+      findResyncMatch(text, words("the dog jumped"), 1, { minStrongLen: 4 })
+    ).toBe(text.indexOf("jumped"));
+  });
+
+  it("uses the last words of the transcript when it contains pre-skip text", () => {
+    // transcript = tail of previous phrase + the new phrase being read;
+    // re-sync slices the latest tokens so the pre-skip tail does not matter
+    const text = words(
+      "old phrase ending here new phrase begins now and continues along"
+    );
+    const transcript = words("here new phrase begins now");
+    const res = findResyncMatch(text, transcript.slice(-8), 2, {
+      minStrongLen: 4,
+    });
+    expect(res).toBe(text.indexOf("now"));
+  });
 });
