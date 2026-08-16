@@ -372,15 +372,18 @@ Happy recording!`);
         // that way a skipped phrase can be matched even while reading
         // fluently without pauses (when final results are rare). A strong
         // word (>=4 chars) is required so filler pairs like "and the" never
-        // trigger a jump. The search NEVER leaves the next paragraph and is
-        // bounded to a short word window: a wrong jump further into the
-        // script is unacceptable, so if there is no local match we simply
-        // do not move.
+        // trigger a jump. The search NEVER goes past PARAGRAPH_LOOKAHEAD
+        // paragraphs ahead and is bounded to a short word window: a wrong
+        // jump further into the script is unacceptable, so if there is no
+        // local match we simply do not move.
         const resyncTokens = tokens.slice(-8);
         const skipWords = skipCoHostRef.current
           ? skippableWordsRef.current
           : null;
-        const resyncEndIndex = getResyncEndIndex(startIndex - 1);
+        const resyncEndIndex = getParagraphsEndIndex(
+          startIndex - 1,
+          PARAGRAPH_LOOKAHEAD
+        );
         nextIndex = findResyncMatch(
           normalizedWordsRef.current,
           resyncTokens,
@@ -1406,14 +1409,15 @@ Happy recording!`);
     // "@Name:" lines) are excluded when skipping is enabled, so the window
     // "flows over" another speaker's block no matter how long it is —
     // the window budget is only spent on the presenter's own words.
-    // The search NEVER crosses into the next paragraph: a coincidental
-    // repeated word/phrase there would otherwise win over the real (but
-    // unmatched, e.g. misheard) continuation in the current paragraph.
-    // Crossing paragraphs is left to the stricter findResyncMatch fallback.
+    // The search is bounded to PARAGRAPH_LOOKAHEAD paragraphs ahead: a
+    // coincidental repeated word/phrase much further down the script can't
+    // win, but the tracker still has room to follow normal reading across
+    // a paragraph break instead of getting stuck waiting for the stricter
+    // findResyncMatch fallback to find a strong-enough anchor.
     const skip = skipCoHostRef.current ? skippableWordsRef.current : null;
     const total = Math.min(
       normalizedWordsRef.current.length,
-      getParagraphEndIndex(startIndex - 1) + 1
+      getParagraphsEndIndex(startIndex - 1, PARAGRAPH_LOOKAHEAD) + 1
     );
     const searchIdx = [];
     for (
@@ -1481,43 +1485,34 @@ Happy recording!`);
     return { start, end };
   };
 
-  // Word index where the paragraph containing `wIdx` ends (paragraphs are
-  // separated by empty lines). Used to keep normal token-advance matching
-  // from latching onto a coincidental repeat in the following paragraph —
-  // a nearby "false" match wins if it isn't disambiguated by boundary.
-  const getParagraphEndIndex = (wIdx) => {
+  // Word index where the paragraph `aheadCount` paragraphs after the one
+  // containing `wIdx` ends (paragraphs are separated by empty lines).
+  // aheadCount=0 -> end of the paragraph containing wIdx itself.
+  // Used to bound both normal token-advance matching and phrase-skip
+  // re-sync to a fixed number of paragraphs ahead, so a coincidental
+  // repeated word/phrase far down the script can never win, while a
+  // genuine forward match still has enough room to be found (getting
+  // stuck at a paragraph boundary is worse than an occasional over-eager
+  // jump within that bounded window).
+  const getParagraphsEndIndex = (wIdx, aheadCount = 0) => {
     const lines = linesWordsRef.current;
     const starts = lineStartIndexRef.current;
     if (!starts || starts.length === 0) return wordsRef.current.length - 1;
-    const lineIdx = getLineIdxForWord(wIdx);
-    let i = lineIdx;
+    let i = getLineIdxForWord(wIdx);
     while (i < lines.length && lines[i].length > 0) i++;
+    for (let remaining = aheadCount; remaining > 0 && i < lines.length; remaining--) {
+      while (i < lines.length && lines[i].length === 0) i++;
+      while (i < lines.length && lines[i].length > 0) i++;
+    }
     const endLine = Math.min(i, lines.length) - 1;
     if (endLine < 0) return wordsRef.current.length - 1;
     return (starts[endLine + 1] ?? wordsRef.current.length) - 1;
   };
 
-  // Word index where the NEXT paragraph after the one containing `wIdx`
-  // ends (paragraphs are separated by empty lines). Used to keep phrase-skip
-  // re-sync local: it never jumps further than the following paragraph.
-  const getResyncEndIndex = (wIdx) => {
-    const lines = linesWordsRef.current;
-    const starts = lineStartIndexRef.current;
-    if (!starts || starts.length === 0) return Infinity;
-    let lineIdx = 0;
-    for (let i = 0; i < starts.length; i++) {
-      if (starts[i] <= wIdx) lineIdx = i;
-      else break;
-    }
-    let i = lineIdx + 1;
-    while (i < lines.length && lines[i].length > 0) i++;
-    while (i < lines.length && lines[i].length === 0) i++;
-    while (i < lines.length && lines[i].length > 0) i++;
-    const endLine = Math.min(i, lines.length) - 1;
-    if (endLine < 0) return Infinity;
-    const endWord = (starts[endLine + 1] ?? wordsRef.current.length) - 1;
-    return endWord;
-  };
+  // How many paragraphs beyond the current one a spoken phrase may match
+  // in before it's considered "too far" and ignored, both for the normal
+  // fast advance and for phrase-skip re-sync.
+  const PARAGRAPH_LOOKAHEAD = 2;
 
   const findNextInLine = (
     tokens,

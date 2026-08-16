@@ -5,6 +5,13 @@ All notable changes to Smart Teleprompter will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.5] - 2026-08-16
+
+### Fixed
+
+- 2.4.4 bounded normal token-advance matching (`tryAdvanceByTokens`) to the current paragraph only, to stop it latching onto a coincidental repeated word/phrase in the next paragraph. That was too strict: every real paragraph-to-paragraph transition then had to go through the much stricter `findResyncMatch` fallback (3-gram, 2 exact matches), which often couldn't find a strong enough anchor right after a pause, and the tracker got stuck at paragraph boundaries. Both the fast path and the resync fallback now search up to `PARAGRAPH_LOOKAHEAD` (2) paragraphs ahead of the current one, so normal reading flows across paragraph breaks while a match many paragraphs away still can't win.
+- Service worker cache bumped to `v8`.
+
 ## [2.4.4] - 2026-08-16
 
 ### Fixed
