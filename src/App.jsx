@@ -1409,15 +1409,18 @@ Happy recording!`);
     // "@Name:" lines) are excluded when skipping is enabled, so the window
     // "flows over" another speaker's block no matter how long it is —
     // the window budget is only spent on the presenter's own words.
-    // The search is bounded to PARAGRAPH_LOOKAHEAD paragraphs ahead: a
-    // coincidental repeated word/phrase much further down the script can't
-    // win, but the tracker still has room to follow normal reading across
-    // a paragraph break instead of getting stuck waiting for the stricter
-    // findResyncMatch fallback to find a strong-enough anchor.
+    // The search NEVER crosses into the next paragraph. Its matching is
+    // deliberately weak (a single word, even soft/prefix-matched, is enough
+    // to jump) so it can keep up in real time — safe within one paragraph,
+    // but a repeated word near a paragraph break would otherwise win over
+    // the real (unmatched, e.g. misheard) continuation. Crossing paragraphs
+    // is left entirely to findResyncMatch below, which requires a 3-gram
+    // with at least 2 exact matches and reaches PARAGRAPH_LOOKAHEAD
+    // paragraphs ahead — strong enough evidence to trust further away.
     const skip = skipCoHostRef.current ? skippableWordsRef.current : null;
     const total = Math.min(
       normalizedWordsRef.current.length,
-      getParagraphsEndIndex(startIndex - 1, PARAGRAPH_LOOKAHEAD) + 1
+      getParagraphsEndIndex(startIndex - 1, 0) + 1
     );
     const searchIdx = [];
     for (
