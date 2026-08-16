@@ -2,7 +2,7 @@
 
 A free, open-source teleprompter application that uses real-time speech recognition to automatically follow your voice as you read. Perfect for content creators, presenters, and anyone who needs a professional teleprompter solution.
 
-**🌐 Live at [smarttelepromter.com](https://smarttelepromter.com)**
+**🌐 Live at [teleprompter.edutictac.es](https://teleprompter.edutictac.es)**
 
 ![Version](https://img.shields.io/badge/Version-2.2.0-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
@@ -81,7 +81,7 @@ A free, open-source teleprompter application that uses real-time speech recognit
 
 ### Use Online
 
-Visit **[smarttelepromter.com](https://smarttelepromter.com)** and click "🚀 Launch App".
+Visit **[teleprompter.edutictac.es](https://teleprompter.edutictac.es)** and click "🚀 Launch App".
 
 ### Run Locally
 

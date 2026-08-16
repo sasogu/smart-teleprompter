@@ -21,4 +21,4 @@ User-agent: Amazonbot
 User-agent: meta-externalagent
 Allow: /
 
-Sitemap: https://smarttelepromter.com/sitemap.xml
+Sitemap: https://teleprompter.edutictac.es/sitemap.xml

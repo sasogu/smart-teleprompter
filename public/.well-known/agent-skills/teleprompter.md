@@ -2,7 +2,7 @@
 name: smart-teleprompter
 version: 1.0.0
 description: Control the Smart Teleprompter web app — load a script, drive auto-scroll or voice tracking, and adjust reading settings.
-homepage: https://smarttelepromter.com/
+homepage: https://teleprompter.edutictac.es/
 license: MIT
 ---
 
@@ -32,7 +32,7 @@ those tools to operate the teleprompter.
 
 ## Typical flow
 
-1. Open `https://smarttelepromter.com/app.html`.
+1. Open `https://teleprompter.edutictac.es/app.html`.
 2. Call `load_script` with the presenter's text (and language if not English).
 3. Call `set_speed` / `set_font_size` to taste.
 4. Call `start_autoscroll` (any device) or `start_voice_tracking` (desktop Chrome, mic permission required).
