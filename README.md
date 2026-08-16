@@ -36,11 +36,8 @@ A free, open-source teleprompter application that uses real-time speech recognit
 - **Aim marker styles** — crosshair, dot, or camera-frame in 5 colors
 - **Hideable "Listening" indicator** for clean on-camera recording
 
-### 🔗 Sharing & Offline
+### 🔗 Offline
 
-- **Share scripts via link** — send any saved script to another device with a
-  short link (no account; links auto-expire after 30 days). Powered by a
-  Cloudflare Pages Function + KV
 - **Installable PWA** — install from the browser for a standalone app window
 - **Offline support** — the app shell is cached by a service worker;
   auto-scroll mode works with no internet at all
@@ -55,8 +52,7 @@ A free, open-source teleprompter application that uses real-time speech recognit
 - **File import** from .txt and .md files
 - **Settings persistence** with localStorage
 - **Smooth animations** and transitions
-- **Privacy first** — all data stays on your device (scripts leave it only
-  when you explicitly share them)
+- **Privacy first** — all data stays on your device
 
 ### 🌍 Multi-Language Support
 
@@ -206,37 +202,15 @@ npm run preview   # preview the production build
 
 ## 🚀 Deployment
 
-The `dist/` output is ready for any static hosting. Includes:
+The app is deployed exclusively to `teleprompter.edutictac.es` (VPS
+aulessocarrades, nginx). The site is a plain static host: nginx `try_files`
+falls back to `index.html`, `sw.js` is served normally, and the SPA routes
+work.
 
-- `_headers` — Cloudflare Pages security headers + cache control
-- `_redirects` — Clean URL routing (`/app` → `/app.html`)
-- `manifest.json` — PWA manifest
-- `sw.js` — Service worker (offline support / installable PWA)
-
-Deploy to Cloudflare Pages, Vercel, Netlify, or any static host.
-
-### Deployment at teleprompter.edutictac.es (nginx)
-
-The app is also served from `teleprompter.edutictac.es` (VPS aulessocarrades,
-nginx). The site is a plain static host: nginx `try_files` falls back to
-`index.html`, `sw.js` is served normally, and the SPA routes work.
-
-⚠️ **`/api/share` (script sharing) is NOT served on nginx** — that endpoint
-is a Cloudflare Pages Function backed by a KV namespace. On this deploy the
-Share button reports that sharing isn't configured; everything else
-(voice autoscroll, editor, PWA) works. Redeploying means rsync'ing `dist/`
-to `/var/www/teleprompter/`.
-
-### Cloudflare extras (optional, free tier)
-
-- **Script sharing** (`functions/api/share/`) needs a KV namespace bound to
-  the Pages project as `SHARES` (Workers & Pages → project → Settings →
-  Bindings → Add → KV namespace, variable name `SHARES`). Without the
-  binding the app works normally — the Share button just reports that
-  sharing isn't configured.
-- **Analytics**: enable Cloudflare Web Analytics for the Pages project
-  (Metrics tab), or paste your beacon token in `index.html`/`app.html`
-  where marked. Cookieless — no consent banner needed.
+Release process: bump the version in `package.json`, bump `CACHE_VERSION` in
+`public/sw.js`, add a `CHANGELOG.md` entry, run `npm run test` and
+`npm run build`, then `rsync -avz --delete dist/` to
+`/var/www/teleprompter/`.
 
 ## 🤝 Contributing
 

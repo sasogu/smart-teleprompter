@@ -11,7 +11,6 @@ import ResetConfirmModal from "./components/modals/ResetConfirmModal.jsx";
 import ShortcutsHelpModal from "./components/modals/ShortcutsHelpModal.jsx";
 import ScriptList from "./components/ScriptList.jsx";
 import DeleteScriptConfirmModal from "./components/modals/DeleteScriptConfirmModal.jsx";
-import SharedScriptImportModal from "./components/modals/SharedScriptImportModal.jsx";
 import AddEditScriptModal from "./components/modals/AddEditScriptModal.jsx";
 import Toolbar from "./components/Toolbar.jsx";
 import TeleprompterDisplay from "./components/TeleprompterDisplay.jsx";
@@ -206,13 +205,10 @@ Happy recording!`);
     setScriptFormTouched,
     deleteScriptConfirm,
     setDeleteScriptConfirm,
-    pendingSharedScript,
-    setPendingSharedScript,
     openAddScriptModal,
     openEditScriptModal,
     saveScript,
     loadScript,
-    confirmImportSharedScript,
     confirmDeleteScript,
   } = useScriptLibrary({ text, setText, setLanguage });
   const [extraBottomSpacePx, setExtraBottomSpacePx] = useState(0);
@@ -676,8 +672,6 @@ Happy recording!`);
     toggleFullscreen,
     setMirrorX,
     setShowShortcuts,
-    pendingSharedScript,
-    setPendingSharedScript,
     deleteScriptConfirm,
     setDeleteScriptConfirm,
     showAddScript,
@@ -1189,16 +1183,6 @@ Happy recording!`);
           script={deleteScriptConfirm}
           onCancel={() => setDeleteScriptConfirm(null)}
           onConfirm={confirmDeleteScript}
-        />
-      )}
-
-      {/* Import Shared Script Confirmation Modal */}
-      {pendingSharedScript && (
-        <SharedScriptImportModal
-          t={t}
-          script={pendingSharedScript}
-          onCancel={() => setPendingSharedScript(null)}
-          onConfirm={confirmImportSharedScript}
         />
       )}
 

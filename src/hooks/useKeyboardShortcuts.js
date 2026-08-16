@@ -17,8 +17,6 @@ export default function useKeyboardShortcuts({
   toggleFullscreen,
   setMirrorX,
   setShowShortcuts,
-  pendingSharedScript,
-  setPendingSharedScript,
   deleteScriptConfirm,
   setDeleteScriptConfirm,
   showAddScript,
@@ -99,8 +97,7 @@ export default function useKeyboardShortcuts({
         return;
       }
       if (e.key === "Escape") {
-        if (pendingSharedScript) { setPendingSharedScript(null); }
-        else if (deleteScriptConfirm) { setDeleteScriptConfirm(null); }
+        if (deleteScriptConfirm) { setDeleteScriptConfirm(null); }
         else if (showAddScript) { setShowAddScript(false); }
         else if (showShortcuts) { setShowShortcuts(false); }
         else if (showResetConfirm) { setShowResetConfirm(false); }

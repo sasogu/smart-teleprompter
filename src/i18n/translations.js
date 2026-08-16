@@ -147,10 +147,6 @@ export const UI_TEXT = {
     resetAllSettingsTitle: "Reset All Settings?",
     resetAllSettingsBody:
       "This will restore all settings to their defaults: font size, colors, speed, language, and layout. Your script text will not be affected.",
-    importSharedScriptTitle: "Import Shared Script?",
-    importSharedScriptBody:
-      "Someone sent you a link to this script. Importing it will add it to your saved scripts and load it as the active text.",
-    importSharedScriptConfirm: "Import",
     keyboardTitle: "Keyboard Shortcuts",
     keyboardBody:
       "V: Microphone  |  P: Auto-scroll  |  H: Word highlight  |  R: Reset  |  L: Language  |  E: Settings  |  S: Script editor  |  B: My Scripts  |  F: Fullscreen  |  M: Mirror  |  ?: This panel  |  Esc: Close panels",
@@ -312,10 +308,6 @@ export const UI_TEXT = {
     resetAllSettingsTitle: "¿Restablecer todos los ajustes?",
     resetAllSettingsBody:
       "Esto restaurará los ajustes por defecto: tamaño de letra, colores, velocidad, idioma y diseño. El texto del guion no se modificará.",
-    importSharedScriptTitle: "¿Importar guion compartido?",
-    importSharedScriptBody:
-      "Alguien te ha enviado un enlace a este guion. Importarlo lo añadirá a tus guiones guardados y lo cargará como texto activo.",
-    importSharedScriptConfirm: "Importar",
     keyboardTitle: "Atajos de teclado",
     keyboardBody:
       "V: Micrófono  |  P: Autoavance  |  H: Resaltado  |  R: Reiniciar  |  L: Idioma  |  E: Ajustes  |  S: Editor  |  B: Mis guiones  |  F: Pantalla completa  |  M: Espejo  |  ?: Este panel  |  Esc: Cerrar paneles",

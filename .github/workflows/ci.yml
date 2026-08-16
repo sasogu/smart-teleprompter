@@ -1,6 +1,6 @@
 # CI: runs the Vitest suite and a production build on every push/PR.
 # Why: the project already had 9 tests but nothing ran them automatically —
-# a regression could reach Cloudflare Pages unnoticed. This catches it first.
+# a regression could reach production unnoticed. This catches it first.
 name: CI
 
 on:
