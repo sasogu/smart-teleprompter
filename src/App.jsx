@@ -14,6 +14,9 @@ import {
 import { computeAutoIntervalMs } from "./utils/autoScroll.js";
 import IconButton from "./components/IconButton.jsx";
 import TeleprompterLine from "./components/TeleprompterLine.jsx";
+import ResetConfirmModal from "./components/modals/ResetConfirmModal.jsx";
+import ShortcutsHelpModal from "./components/modals/ShortcutsHelpModal.jsx";
+import LanguageDropdown from "./components/LanguageDropdown.jsx";
 
 
 // Co-host speaker markers (GitHub #2): a line starting with ">>" or "@Name:"
@@ -2370,77 +2373,23 @@ Happy recording!`);
 
           {/* Language dropdown */}
           {showLanguageSelector && (
-            <div
-              data-language-dropdown
-              style={{
-                position: "fixed",
-                top: languageMenuPos.top,
-                left: languageMenuPos.left,
-                background: "rgba(0,0,0,0.95)",
-                color: "white",
-                border: "1px solid #555",
-                borderRadius: 8,
-                padding: 10,
-                zIndex: 1500,
-                maxHeight: 400,
-                overflowY: "auto",
-                minWidth: 220,
-                maxWidth: "calc(100vw - 40px)",
-                boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+            <LanguageDropdown
+              languagesList={languagesList}
+              language={language}
+              menuPos={languageMenuPos}
+              onSelect={(code) => {
+                setLanguage(code);
+                setShowLanguageSelector(false);
+                try {
+                  if (recognitionRef.current)
+                    recognitionRef.current.lang = code;
+                } catch (_) {}
+                if (isListeningRef.current) {
+                  // restart with new language
+                  safeRestartRecognition(150);
+                }
               }}
-            >
-              {languagesList.map((lng) => (
-                <button
-                  key={lng.code}
-                  onClick={() => {
-                    setLanguage(lng.code);
-                    setShowLanguageSelector(false);
-                    try {
-                      if (recognitionRef.current)
-                        recognitionRef.current.lang = lng.code;
-                    } catch (_) {}
-                    if (isListeningRef.current) {
-                      // restart with new language
-                      safeRestartRecognition(150);
-                    }
-                  }}
-                  style={{
-                    width: "100%",
-                    textAlign: "left",
-                    border: "1px solid #444",
-                    background: language === lng.code ? "#2e7d32" : "#222",
-                    color: "white",
-                    padding: "8px 10px",
-                    borderRadius: 6,
-                    cursor: "pointer",
-                    marginBottom: 6,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
-                  {language === lng.code ? (
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="white"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M20 6L9 17l-5-5" />
-                    </svg>
-                  ) : (
-                    <span style={{ width: 16, display: "inline-block" }} />
-                  )}
-                  <span>
-                    {lng.label} — {lng.code}
-                  </span>
-                </button>
-              ))}
-            </div>
+            />
           )}
 
           {/* Upload button hidden per request */}
@@ -4358,207 +4307,23 @@ Happy recording!`);
 
       {/* Reset Confirmation Modal */}
       {showResetConfirm && (
-        <div
-          onClick={() => setShowResetConfirm(false)}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0,0,0,0.8)",
-            zIndex: 20000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+        <ResetConfirmModal
+          t={t}
+          onCancel={() => setShowResetConfirm(false)}
+          onConfirm={() => {
+            resetSettingsToDefault();
+            setShowResetConfirm(false);
           }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: "#111",
-              border: "2px solid rgba(255,255,255,0.15)",
-              borderRadius: "16px",
-              padding: "32px",
-              maxWidth: "400px",
-              width: "calc(100vw - 40px)",
-              boxShadow: "0 16px 48px rgba(0,0,0,0.6)",
-              textAlign: "center",
-            }}
-          >
-            <div style={{ fontSize: "40px", marginBottom: "16px" }}>⚠️</div>
-            <h2
-              style={{
-                color: "white",
-                margin: "0 0 12px",
-                fontSize: "20px",
-              }}
-            >
-              {t("resetAllSettingsTitle")}
-            </h2>
-            <p
-              style={{
-                color: "#aaa",
-                fontSize: "14px",
-                lineHeight: "1.5",
-                margin: "0 0 24px",
-              }}
-            >
-              {t("resetAllSettingsBody")}
-            </p>
-            <div
-              style={{ display: "flex", gap: "12px", justifyContent: "center" }}
-            >
-              <button
-                onClick={() => setShowResetConfirm(false)}
-                style={{
-                  padding: "10px 24px",
-                  borderRadius: "8px",
-                  border: "1px solid #555",
-                  background: "#333",
-                  color: "white",
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                  fontSize: "14px",
-                }}
-              >
-                {t("cancel")}
-              </button>
-              <button
-                onClick={() => {
-                  resetSettingsToDefault();
-                  setShowResetConfirm(false);
-                }}
-                style={{
-                  padding: "10px 24px",
-                  borderRadius: "8px",
-                  border: "none",
-                  background: "#b71c1c",
-                  color: "white",
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                  fontSize: "14px",
-                }}
-              >
-                {t("reset")}
-              </button>
-            </div>
-          </div>
-        </div>
+        />
       )}
 
       {/* Keyboard Shortcuts Modal */}
       {showShortcuts && (
-        <div
-          onClick={() => setShowShortcuts(false)}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0,0,0,0.8)",
-            zIndex: 20000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: "#111",
-              border: "2px solid rgba(255,255,255,0.15)",
-              borderRadius: "16px",
-              padding: "32px",
-              maxWidth: "480px",
-              width: "calc(100vw - 40px)",
-              maxHeight: "80vh",
-              overflowY: "auto",
-              boxShadow: "0 16px 48px rgba(0,0,0,0.6)",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "20px",
-              }}
-            >
-              <h2 style={{ color: "white", margin: 0, fontSize: "20px" }}>
-                ⌨️ {t("keyboardShortcuts")}
-              </h2>
-              <button
-                onClick={() => setShowShortcuts(false)}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "#999",
-                  fontSize: "24px",
-                  cursor: "pointer",
-                  padding: "4px 8px",
-                }}
-              >
-                ×
-              </button>
-            </div>
-            {[
-              ["V", t("shortcutsStartStopMic")],
-              ["P", t("shortcutsAutoScroll")],
-              ["H", t("shortcutsHighlight")],
-              ["R", t("shortcutsReset")],
-              ["L", t("shortcutsLanguage")],
-              ["E", t("shortcutsSettings")],
-              ["S", t("shortcutsEditor")],
-              ["B", t("shortcutsMyScripts")],
-              ["F", t("shortcutsFullscreen")],
-              ["M", t("shortcutsMirror")],
-              ["?", t("shortcutsPanel")],
-            ].map(([key, desc]) => (
-              <div
-                key={key}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "10px 12px",
-                  background: "#1a1a1a",
-                  borderRadius: "8px",
-                  marginBottom: "6px",
-                }}
-              >
-                <span style={{ color: "#ccc", fontSize: "14px" }}>{desc}</span>
-                <kbd
-                  style={{
-                    background: "#333",
-                    color: "white",
-                    padding: "4px 12px",
-                    borderRadius: "6px",
-                    fontSize: "14px",
-                    fontFamily: "monospace",
-                    fontWeight: "bold",
-                    border: "1px solid #555",
-                    minWidth: "28px",
-                    textAlign: "center",
-                  }}
-                >
-                  {key}
-                </kbd>
-              </div>
-            ))}
-            <div
-              style={{
-                textAlign: "center",
-                color: "#888",
-                fontSize: "12px",
-                marginTop: "16px",
-              }}
-            >
-              Smart Teleprompter v{__APP_VERSION__}
-            </div>
-          </div>
-        </div>
+        <ShortcutsHelpModal
+          t={t}
+          appVersion={__APP_VERSION__}
+          onClose={() => setShowShortcuts(false)}
+        />
       )}
 
     </main>
