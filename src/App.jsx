@@ -208,12 +208,10 @@ Happy recording!`);
     setDeleteScriptConfirm,
     pendingSharedScript,
     setPendingSharedScript,
-    shareBusyId,
     openAddScriptModal,
     openEditScriptModal,
     saveScript,
     loadScript,
-    shareScript,
     confirmImportSharedScript,
     confirmDeleteScript,
   } = useScriptLibrary({ text, setText, setLanguage });
@@ -308,27 +306,6 @@ Happy recording!`);
     } finally {
       event.target.value = "";
     }
-  };
-
-  const FileButton = ({ onFile }) => {
-    const inputRef = useRef(null);
-    return (
-      <IconButton uiOpacity={uiOpacity}
-        onClick={() => inputRef.current && inputRef.current.click()}
-        ariaLabel="Open File"
-        tooltipTitle={t("openFile")}
-        tooltipDesc={t("importFileTip")}
-      >
-        <Icon name={"arrow-up-tray"} />
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".txt,.md,.markdown,text/plain,text/markdown"
-          onChange={onFile}
-          style={{ display: "none" }}
-        />
-      </IconButton>
-    );
   };
 
   useEffect(() => {

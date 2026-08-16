@@ -250,8 +250,6 @@ export default function Toolbar({
           />
         )}
 
-        {/* Upload button hidden per request */}
-
         {/* Editor button will be placed right before Settings */}
 
         <IconButton uiOpacity={uiOpacity}

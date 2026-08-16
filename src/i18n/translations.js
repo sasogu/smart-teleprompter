@@ -124,8 +124,6 @@ export const UI_TEXT = {
     exportFormat: "Export Format",
     txt: "Plain text (.txt)",
     md: "Markdown (.md)",
-    openFile: "Open File",
-    importFileTip: "Import .txt or .md file",
     supportedFileTypes:
       "Supported file types: .txt, .md, .markdown. Please use the script editor to paste other formats.",
     fileLoadFailed:
@@ -291,8 +289,6 @@ export const UI_TEXT = {
     exportFormat: "Formato de exportación",
     txt: "Texto plano (.txt)",
     md: "Markdown (.md)",
-    openFile: "Abrir archivo",
-    importFileTip: "Importar archivo .txt o .md",
     supportedFileTypes:
       "Formatos soportados: .txt, .md, .markdown. Usa el editor para pegar otros formatos.",
     fileLoadFailed:

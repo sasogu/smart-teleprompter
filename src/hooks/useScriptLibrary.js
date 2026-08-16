@@ -4,8 +4,8 @@ const SCRIPTS_KEY = "tp_scripts_v1";
 const MAX_SCRIPTS = 50;
 const SETTINGS_KEY = "tp_settings_v1";
 
-// Saved-script library: CRUD, localStorage persistence, and sharing a
-// script via link (Cloudflare Pages Function + KV, see /api/share).
+// Saved-script library: CRUD, localStorage persistence, and importing a
+// script shared via link (Cloudflare Pages Function + KV, see /api/share).
 // `text`/`setText`/`setLanguage` are the main teleprompter script state,
 // owned by the caller — loading/saving a saved script reads/writes those.
 export default function useScriptLibrary({ text, setText, setLanguage }) {
@@ -19,7 +19,6 @@ export default function useScriptLibrary({ text, setText, setLanguage }) {
   const [scriptFormTouched, setScriptFormTouched] = useState(false);
   const [deleteScriptConfirm, setDeleteScriptConfirm] = useState(null);
   const [pendingSharedScript, setPendingSharedScript] = useState(null);
-  const [shareBusyId, setShareBusyId] = useState(null);
 
   useEffect(() => {
     try {
@@ -126,53 +125,6 @@ export default function useScriptLibrary({ text, setText, setLanguage }) {
     if (script.language) setLanguage(script.language);
   };
 
-  // --- Share a script via link (Cloudflare Pages Function + KV) ---
-  // POST /api/share stores the script server-side for 30 days and returns a
-  // short id; the link opens the app on any device with ?share=<id>.
-  const shareScript = async (script) => {
-    if (shareBusyId) return;
-    setShareBusyId(script.id);
-    try {
-      const res = await fetch("/api/share", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: script.name,
-          text: script.text,
-          language: script.language || "en-US",
-        }),
-      });
-      if (!res.ok) {
-        alert(
-          res.status === 503
-            ? "Sharing is not configured on this deployment yet."
-            : "Could not create the share link. Please try again."
-        );
-        return;
-      }
-      const data = await res.json();
-      const url = `${window.location.origin}/app.html?share=${data.id}`;
-      let copied = false;
-      try {
-        await navigator.clipboard.writeText(url);
-        copied = true;
-      } catch (_) {}
-      alert(
-        (copied
-          ? "Share link copied to clipboard:\n\n"
-          : "Share link (copy it manually):\n\n") +
-          url +
-          "\n\nAnyone with the link can import this script. It expires in 30 days."
-      );
-    } catch (_) {
-      alert(
-        "Could not create the share link. Check your connection and try again."
-      );
-    } finally {
-      setShareBusyId(null);
-    }
-  };
-
   // Import a script that was shared via link (?share=<id>).
   useEffect(() => {
     try {
@@ -265,12 +217,10 @@ export default function useScriptLibrary({ text, setText, setLanguage }) {
     setDeleteScriptConfirm,
     pendingSharedScript,
     setPendingSharedScript,
-    shareBusyId,
     openAddScriptModal,
     openEditScriptModal,
     saveScript,
     loadScript,
-    shareScript,
     confirmImportSharedScript,
     confirmDeleteScript,
   };
