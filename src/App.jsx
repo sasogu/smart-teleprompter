@@ -100,6 +100,7 @@ Happy recording!`);
   const [isPlaying, setIsPlaying] = useState(false);
   const [followEnabled, setFollowEnabled] = useState(false);
   const [lookaheadWindow, setLookaheadWindow] = useState(10);
+  const [paragraphLookahead, setParagraphLookahead] = useState(3);
   const [userIsInteracting, setUserIsInteracting] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [centerPaddingVh, setCenterPaddingVh] = useState(45);
@@ -372,7 +373,7 @@ Happy recording!`);
         // that way a skipped phrase can be matched even while reading
         // fluently without pauses (when final results are rare). A strong
         // word (>=4 chars) is required so filler pairs like "and the" never
-        // trigger a jump. The search NEVER goes past PARAGRAPH_LOOKAHEAD
+        // trigger a jump. The search NEVER goes past paragraphLookahead
         // paragraphs ahead and is bounded to a short word window: a wrong
         // jump further into the script is unacceptable, so if there is no
         // local match we simply do not move.
@@ -382,7 +383,7 @@ Happy recording!`);
           : null;
         const resyncEndIndex = getParagraphsEndIndex(
           startIndex - 1,
-          PARAGRAPH_LOOKAHEAD
+          paragraphLookahead
         );
         nextIndex = findResyncMatch(
           normalizedWordsRef.current,
@@ -488,6 +489,7 @@ Happy recording!`);
     highlightColor: "#ffeb3b",
     followEnabled: false,
     lookaheadWindow: 10,
+    paragraphLookahead: 3,
     centerPaddingVh: 45,
     showAim: true,
     aimOffsetX: 0,
@@ -520,6 +522,7 @@ Happy recording!`);
     setHighlightColor(defaultSettings.highlightColor);
     setFollowEnabled(defaultSettings.followEnabled);
     setLookaheadWindow(defaultSettings.lookaheadWindow);
+    setParagraphLookahead(defaultSettings.paragraphLookahead);
     setCenterPaddingVh(defaultSettings.centerPaddingVh);
     setShowAim(defaultSettings.showAim);
     setAimOffsetX(defaultSettings.aimOffsetX);
@@ -777,6 +780,8 @@ Happy recording!`);
       if (typeof s.text === "string") setText(s.text);
       if (s.followEnabled != null) setFollowEnabled(s.followEnabled);
       if (s.lookaheadWindow != null) setLookaheadWindow(s.lookaheadWindow);
+      if (s.paragraphLookahead != null)
+        setParagraphLookahead(s.paragraphLookahead);
       if (s.centerPaddingVh != null) setCenterPaddingVh(s.centerPaddingVh);
       if (s.showAim != null) setShowAim(s.showAim);
       if (s.aimOffsetX != null) setAimOffsetX(s.aimOffsetX);
@@ -825,6 +830,7 @@ Happy recording!`);
         highlightColor,
         followEnabled,
         lookaheadWindow,
+        paragraphLookahead,
         centerPaddingVh,
         showAim,
         aimOffsetX,
@@ -869,6 +875,7 @@ Happy recording!`);
     highlightColor,
     followEnabled,
     lookaheadWindow,
+    paragraphLookahead,
     centerPaddingVh,
     showAim,
     aimOffsetX,
@@ -1415,7 +1422,7 @@ Happy recording!`);
     // but a repeated word near a paragraph break would otherwise win over
     // the real (unmatched, e.g. misheard) continuation. Crossing paragraphs
     // is left entirely to findResyncMatch below, which requires a 3-gram
-    // with at least 2 exact matches and reaches PARAGRAPH_LOOKAHEAD
+    // with at least 2 exact matches and reaches paragraphLookahead
     // paragraphs ahead — strong enough evidence to trust further away.
     const skip = skipCoHostRef.current ? skippableWordsRef.current : null;
     const total = Math.min(
@@ -1511,11 +1518,6 @@ Happy recording!`);
     if (endLine < 0) return wordsRef.current.length - 1;
     return (starts[endLine + 1] ?? wordsRef.current.length) - 1;
   };
-
-  // How many paragraphs beyond the current one a spoken phrase may match
-  // in before it's considered "too far" and ignored, both for the normal
-  // fast advance and for phrase-skip re-sync.
-  const PARAGRAPH_LOOKAHEAD = 2;
 
   const findNextInLine = (
     tokens,
@@ -3184,6 +3186,30 @@ Happy recording!`);
                   style={{ color: "#aaa", fontSize: "12px", marginTop: "4px" }}
                 >
                   {t("lookaheadHelp")}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: "20px" }}>
+                <label
+                  style={{
+                    color: "white",
+                    display: "block",
+                    marginBottom: "8px",
+                  }}
+                >
+                  {t("paragraphLookahead")}: {paragraphLookahead}{" "}
+                  {t("paragraphs")}
+                </label>
+                <CustomSlider
+                  min={0}
+                  max={6}
+                  value={paragraphLookahead}
+                  onChange={setParagraphLookahead}
+                />
+                <div
+                  style={{ color: "#aaa", fontSize: "12px", marginTop: "4px" }}
+                >
+                  {t("paragraphLookaheadHelp")}
                 </div>
               </div>
 

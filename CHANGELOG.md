@@ -5,6 +5,13 @@ All notable changes to Smart Teleprompter will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.7] - 2026-08-16
+
+### Added
+
+- New "Paragraph re-sync reach" setting (0-6, default 3): how many paragraphs ahead a skipped phrase may re-sync into via `findResyncMatch` (which requires a 3-gram with at least 2 exact matches). Was a fixed constant (`PARAGRAPH_LOOKAHEAD = 2`); now user-configurable and saved/restored with the rest of the settings.
+- Service worker cache bumped to `v10`.
+
 ## [2.4.6] - 2026-08-16
 
 ### Fixed

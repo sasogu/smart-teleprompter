@@ -54,6 +54,10 @@ export const UI_TEXT = {
     scrollSpeed: "Scroll speed",
     autoScrollSpeed: "Auto-scroll speed",
     lookaheadWindow: "Lookahead window",
+    paragraphLookahead: "Paragraph re-sync reach",
+    paragraphs: "paragraphs",
+    paragraphLookaheadHelp:
+      "How many paragraphs ahead a skipped phrase may re-sync into. Higher avoids getting stuck on a skip, but raises the (still strict, 3-word match) chance of a wrong jump on repeated phrases.",
     coHostLines: "Co-host lines",
     skip: "Skip",
     off: "Off",
@@ -215,6 +219,10 @@ export const UI_TEXT = {
     scrollSpeed: "Velocidad de avance",
     autoScrollSpeed: "Velocidad de autoavance",
     lookaheadWindow: "Ventana de anticipación",
+    paragraphLookahead: "Alcance de re-sincronización",
+    paragraphs: "párrafos",
+    paragraphLookaheadHelp:
+      "Cuántos párrafos por delante puede re-sincronizar una frase saltada. Más alto evita quedarse atascado tras un salto, pero aumenta (aunque sigue siendo estricto, exige 3 palabras) la posibilidad de un salto erróneo con frases repetidas.",
     coHostLines: "Líneas de co-presentador",
     skip: "Saltar",
     off: "Desactivado",
