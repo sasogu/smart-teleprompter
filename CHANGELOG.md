@@ -5,6 +5,18 @@ All notable changes to Smart Teleprompter will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.9] - 2026-08-16
+
+### Removed
+
+- Dead code cleanup: unused `FileButton` component, unused `shareScript`/`shareBusyId`, and a stale "Upload button hidden" comment.
+- All Cloudflare Pages code and references, since the app is deployed exclusively to the edutictac VPS (nginx). This includes the "share script via link" feature end-to-end (the `functions/api/share/*.js` backend, which only ran on Cloudflare Pages and never worked on the current deploy, plus the receiving-side UI/state that depended on it), `public/_headers`/`public/_redirects` (Cloudflare-Pages-only config, inert on nginx), and the already-inactive Cloudflare Web Analytics beacon.
+- Updated `README.md` and CI comments to describe the actual nginx/edutictac deployment instead of Cloudflare Pages.
+
+### Changed
+
+- Service worker cache bumped to `v12`.
+
 ## [2.4.8] - 2026-08-16
 
 ### Changed
