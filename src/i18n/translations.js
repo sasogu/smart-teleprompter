@@ -114,6 +114,8 @@ export const UI_TEXT = {
       "Speech recognition service unavailable. Check internet access or Chrome speech service settings.",
     micPermissionBlocked: "Microphone permission is blocked for this site.",
     micServiceBlocked: "Chrome blocked the speech recognition service for this site.",
+    micRequiresHttps:
+      "Microphone and speech recognition require HTTPS. Open the app with an https:// address.",
     micStopped: "Speech recognition stopped.",
     micUnknownError: "Speech recognition error",
     checkConsole: "Check Chrome console for details.",
@@ -279,6 +281,8 @@ export const UI_TEXT = {
       "El servicio de reconocimiento de voz no está disponible. Revisa la conexión o los ajustes de voz de Chrome.",
     micPermissionBlocked: "El permiso de micrófono está bloqueado para este sitio.",
     micServiceBlocked: "Chrome ha bloqueado el servicio de reconocimiento de voz para este sitio.",
+    micRequiresHttps:
+      "El micrófono y el reconocimiento de voz requieren HTTPS. Abre la app con una dirección https://.",
     micStopped: "Reconocimiento de voz detenido.",
     micUnknownError: "Error de reconocimiento de voz",
     checkConsole: "Revisa la consola de Chrome para más detalles.",

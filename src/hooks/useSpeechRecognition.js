@@ -480,6 +480,11 @@ export default function useSpeechRecognition({
       );
       return;
     }
+    if (typeof window !== "undefined" && !window.isSecureContext) {
+      updateMicStatus(t("micRequiresHttps"));
+      alert(t("micRequiresHttps"));
+      return;
+    }
 
     if (isListening) {
       // Fully tear down immediately and release mic permissions
