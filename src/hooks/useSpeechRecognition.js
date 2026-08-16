@@ -21,6 +21,7 @@ export default function useSpeechRecognition({
   t,
   lookaheadWindow,
   paragraphLookahead,
+  resyncMinWords,
   skipCoHostLines,
   wordsRef,
   normalizedWordsRef,
@@ -182,10 +183,12 @@ export default function useSpeechRecognition({
         // current result (not the single-token interim shortcut above) —
         // that way a skipped phrase can be matched even while reading
         // fluently without pauses (when final results are rare). A strong
-        // word (>=4 chars) is required so filler pairs like "and the" never
-        // trigger a jump. The search NEVER goes past paragraphLookahead
-        // paragraphs ahead and is bounded to a short word window: a wrong
-        // jump further into the script is unacceptable, so if there is no
+        // word (>=4 chars) is required, and at least `resyncMinWords`
+        // consecutive words must match (the "three word rule", user-
+        // configurable) so filler pairs like "and the" never trigger a
+        // jump. The search NEVER goes past paragraphLookahead paragraphs
+        // ahead and is bounded to a short word window: a wrong jump
+        // further into the script is unacceptable, so if there is no
         // local match we simply do not move.
         const resyncTokens = tokens.slice(-8);
         const skipWords = skipCoHostRef.current
@@ -203,7 +206,7 @@ export default function useSpeechRecognition({
             skipWords,
             maxDistance: RESYNC_NEAR_DISTANCE,
             endIndex: resyncEndIndex,
-            minNGram: 3,
+            minNGram: resyncMinWords,
             minExact: 2,
             minStrongLen: 4,
           }
@@ -310,9 +313,10 @@ export default function useSpeechRecognition({
     // to jump) so it can keep up in real time — safe within one paragraph,
     // but a repeated word near a paragraph break would otherwise win over
     // the real (unmatched, e.g. misheard) continuation. Crossing paragraphs
-    // is left entirely to findResyncMatch below, which requires a 3-gram
-    // with at least 2 exact matches and reaches paragraphLookahead
-    // paragraphs ahead — strong enough evidence to trust further away.
+    // is left entirely to findResyncMatch below, which requires at least
+    // resyncMinWords consecutive words (2 of them exact) and reaches
+    // paragraphLookahead paragraphs ahead — strong enough evidence to
+    // trust further away.
     const skip = skipCoHostRef.current ? skippableWordsRef.current : null;
     const total = Math.min(
       normalizedWordsRef.current.length,

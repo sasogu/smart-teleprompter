@@ -21,6 +21,8 @@ export default function SettingsPanel({
   setLookaheadWindow,
   paragraphLookahead,
   setParagraphLookahead,
+  resyncMinWords,
+  setResyncMinWords,
   skipCoHostLines,
   setSkipCoHostLines,
   textOpacity,
@@ -361,6 +363,27 @@ export default function SettingsPanel({
         />
         <div style={{ color: "#aaa", fontSize: "12px", marginTop: "4px" }}>
           {t("paragraphLookaheadHelp")}
+        </div>
+      </div>
+
+      <div style={{ marginBottom: "20px" }}>
+        <label
+          style={{
+            color: "white",
+            display: "block",
+            marginBottom: "8px",
+          }}
+        >
+          {t("resyncMinWords")}: {resyncMinWords} {t("words")}
+        </label>
+        <CustomSlider
+          min={2}
+          max={6}
+          value={resyncMinWords}
+          onChange={setResyncMinWords}
+        />
+        <div style={{ color: "#aaa", fontSize: "12px", marginTop: "4px" }}>
+          {t("resyncMinWordsHelp")}
         </div>
       </div>
 

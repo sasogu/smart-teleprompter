@@ -61,7 +61,7 @@ export const findResyncMatch = (
     endIndex === Infinity ? total : endIndex + 1,
     maxDistance === Infinity ? total : startIndex + maxDistance
   );
-  const maxN = Math.min(4, candidates.length);
+  const maxN = Math.min(Math.max(4, minNGram), candidates.length);
   for (let n = maxN; n >= minNGram; n--) {
     const seq = candidates.slice(-n);
     for (let i = startIndex; i + n <= limit; i++) {

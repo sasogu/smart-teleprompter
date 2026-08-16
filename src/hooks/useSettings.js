@@ -20,6 +20,10 @@ export default function useSettings({ text, setText, textFormat, setTextFormat }
   const [followEnabled, setFollowEnabled] = useState(false);
   const [lookaheadWindow, setLookaheadWindow] = useState(10);
   const [paragraphLookahead, setParagraphLookahead] = useState(3);
+  // Minimum consecutive words (n-gram) required to trust a cross-paragraph
+  // voice re-sync match — the "three word rule". Higher = safer (fewer
+  // wrong jumps) but may get stuck longer; lower = jumps more eagerly.
+  const [resyncMinWords, setResyncMinWords] = useState(3);
   const [centerPaddingVh, setCenterPaddingVh] = useState(45);
   const [showAim, setShowAim] = useState(true);
   const [aimOffsetX, setAimOffsetX] = useState(0);
@@ -69,6 +73,7 @@ export default function useSettings({ text, setText, textFormat, setTextFormat }
     followEnabled: false,
     lookaheadWindow: 10,
     paragraphLookahead: 3,
+    resyncMinWords: 3,
     centerPaddingVh: 45,
     showAim: true,
     aimOffsetX: 0,
@@ -102,6 +107,7 @@ export default function useSettings({ text, setText, textFormat, setTextFormat }
     setFollowEnabled(defaultSettings.followEnabled);
     setLookaheadWindow(defaultSettings.lookaheadWindow);
     setParagraphLookahead(defaultSettings.paragraphLookahead);
+    setResyncMinWords(defaultSettings.resyncMinWords);
     setCenterPaddingVh(defaultSettings.centerPaddingVh);
     setShowAim(defaultSettings.showAim);
     setAimOffsetX(defaultSettings.aimOffsetX);
@@ -147,6 +153,7 @@ export default function useSettings({ text, setText, textFormat, setTextFormat }
       if (s.lookaheadWindow != null) setLookaheadWindow(s.lookaheadWindow);
       if (s.paragraphLookahead != null)
         setParagraphLookahead(s.paragraphLookahead);
+      if (s.resyncMinWords != null) setResyncMinWords(s.resyncMinWords);
       if (s.centerPaddingVh != null) setCenterPaddingVh(s.centerPaddingVh);
       if (s.showAim != null) setShowAim(s.showAim);
       if (s.aimOffsetX != null) setAimOffsetX(s.aimOffsetX);
@@ -197,6 +204,7 @@ export default function useSettings({ text, setText, textFormat, setTextFormat }
         followEnabled,
         lookaheadWindow,
         paragraphLookahead,
+        resyncMinWords,
         centerPaddingVh,
         showAim,
         aimOffsetX,
@@ -242,6 +250,7 @@ export default function useSettings({ text, setText, textFormat, setTextFormat }
     followEnabled,
     lookaheadWindow,
     paragraphLookahead,
+    resyncMinWords,
     centerPaddingVh,
     showAim,
     aimOffsetX,
@@ -287,6 +296,8 @@ export default function useSettings({ text, setText, textFormat, setTextFormat }
     setLookaheadWindow,
     paragraphLookahead,
     setParagraphLookahead,
+    resyncMinWords,
+    setResyncMinWords,
     centerPaddingVh,
     setCenterPaddingVh,
     showAim,

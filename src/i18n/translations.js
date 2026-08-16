@@ -57,7 +57,10 @@ export const UI_TEXT = {
     paragraphLookahead: "Paragraph re-sync reach",
     paragraphs: "paragraphs",
     paragraphLookaheadHelp:
-      "How many paragraphs ahead a skipped phrase may re-sync into. Higher avoids getting stuck on a skip, but raises the (still strict, 3-word match) chance of a wrong jump on repeated phrases.",
+      "How many paragraphs ahead a skipped phrase may re-sync into. Higher avoids getting stuck on a skip, but raises the (still strict) chance of a wrong jump on repeated phrases.",
+    resyncMinWords: "Paragraph re-sync strictness",
+    resyncMinWordsHelp:
+      "Minimum consecutive words that must match before a skipped phrase is allowed to jump into another paragraph. Higher is safer (fewer wrong jumps) but may get stuck longer if the match is imperfect; lower reacts faster but risks jumping on repeated phrases.",
     coHostLines: "Co-host lines",
     skip: "Skip",
     off: "Off",
@@ -218,7 +221,10 @@ export const UI_TEXT = {
     paragraphLookahead: "Alcance de re-sincronización",
     paragraphs: "párrafos",
     paragraphLookaheadHelp:
-      "Cuántos párrafos por delante puede re-sincronizar una frase saltada. Más alto evita quedarse atascado tras un salto, pero aumenta (aunque sigue siendo estricto, exige 3 palabras) la posibilidad de un salto erróneo con frases repetidas.",
+      "Cuántos párrafos por delante puede re-sincronizar una frase saltada. Más alto evita quedarse atascado tras un salto, pero aumenta (aunque sigue siendo estricto) la posibilidad de un salto erróneo con frases repetidas.",
+    resyncMinWords: "Exigencia de re-sincronización",
+    resyncMinWordsHelp:
+      "Mínimo de palabras consecutivas que deben coincidir antes de permitir que una frase saltada salte a otro párrafo. Más alto es más seguro (menos saltos erróneos) pero puede quedarse atascado más tiempo si la coincidencia no es perfecta; más bajo reacciona antes pero arriesga saltar con frases repetidas.",
     coHostLines: "Líneas de co-presentador",
     skip: "Saltar",
     off: "Desactivado",

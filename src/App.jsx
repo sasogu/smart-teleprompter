@@ -100,6 +100,7 @@ Happy recording!`);
     followEnabled, setFollowEnabled,
     lookaheadWindow, setLookaheadWindow,
     paragraphLookahead, setParagraphLookahead,
+    resyncMinWords, setResyncMinWords,
     centerPaddingVh, setCenterPaddingVh,
     showAim, setShowAim,
     aimOffsetX, setAimOffsetX,
@@ -424,6 +425,7 @@ Happy recording!`);
     t,
     lookaheadWindow,
     paragraphLookahead,
+    resyncMinWords,
     skipCoHostLines,
     wordsRef,
     normalizedWordsRef,
@@ -945,6 +947,8 @@ Happy recording!`);
               setLookaheadWindow={setLookaheadWindow}
               paragraphLookahead={paragraphLookahead}
               setParagraphLookahead={setParagraphLookahead}
+              resyncMinWords={resyncMinWords}
+              setResyncMinWords={setResyncMinWords}
               skipCoHostLines={skipCoHostLines}
               setSkipCoHostLines={setSkipCoHostLines}
               textOpacity={textOpacity}
