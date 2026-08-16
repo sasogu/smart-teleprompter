@@ -22,6 +22,8 @@ import DeleteScriptConfirmModal from "./components/modals/DeleteScriptConfirmMod
 import SharedScriptImportModal from "./components/modals/SharedScriptImportModal.jsx";
 import AddEditScriptModal from "./components/modals/AddEditScriptModal.jsx";
 import useScriptLibrary from "./hooks/useScriptLibrary.js";
+import useSettings from "./hooks/useSettings.js";
+import SettingsPanel from "./components/SettingsPanel.jsx";
 
 
 // Co-host speaker markers (GitHub #2): a line starting with ">>" or "@Name:"
@@ -94,52 +96,57 @@ This project is completely free and open source. If you find it useful, consider
 
 Happy recording!`);
 
-  const [fontSize, setFontSize] = useState(32);
-  const [margin, setMargin] = useState(20);
-  const [lineHeight, setLineHeight] = useState(1.5);
-  const [scrollSpeed, setScrollSpeed] = useState(88);
-  const [bgColor, setBgColor] = useState("#000000");
-  const [textColor, setTextColor] = useState("#ffffff");
-  const [highlightColor, setHighlightColor] = useState("#ffeb3b");
+  const [textFormat, setTextFormat] = useState("plain");
+  const {
+    fontSize, setFontSize,
+    margin, setMargin,
+    lineHeight, setLineHeight,
+    scrollSpeed, setScrollSpeed,
+    bgColor, setBgColor,
+    textColor, setTextColor,
+    highlightColor, setHighlightColor,
+    followEnabled, setFollowEnabled,
+    lookaheadWindow, setLookaheadWindow,
+    paragraphLookahead, setParagraphLookahead,
+    centerPaddingVh, setCenterPaddingVh,
+    showAim, setShowAim,
+    aimOffsetX, setAimOffsetX,
+    aimOffsetY, setAimOffsetY,
+    aimStyle, setAimStyle,
+    aimColor, setAimColor,
+    showListeningIndicator, setShowListeningIndicator,
+    skipCoHostLines, setSkipCoHostLines,
+    textOpacity, setTextOpacity,
+    aimOpacity, setAimOpacity,
+    uiOpacity, setUiOpacity,
+    paragraphSpacingPx, setParagraphSpacingPx,
+    sidePaddingVw, setSidePaddingVw,
+    textAlignStyle, setTextAlignStyle,
+    mirrorX, setMirrorX,
+    toolbarPosition, setToolbarPosition,
+    language, setLanguage,
+    showSupportPrompts, setShowSupportPrompts,
+    uiLanguage, setUiLanguage,
+    paragraphHighlightOpacity, setParagraphHighlightOpacity,
+    defaultSettings,
+    resetSettingsToDefault,
+  } = useSettings({ text, setText, textFormat, setTextFormat });
 
   const [isListening, setIsListening] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [currentWordIndex, setCurrentWordIndex] = useState(-1);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [followEnabled, setFollowEnabled] = useState(false);
-  const [lookaheadWindow, setLookaheadWindow] = useState(10);
-  const [paragraphLookahead, setParagraphLookahead] = useState(3);
   const [userIsInteracting, setUserIsInteracting] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [centerPaddingVh, setCenterPaddingVh] = useState(45);
   const [showCenterLine, setShowCenterLine] = useState(false);
-  const [showAim, setShowAim] = useState(true);
   const [showHighlight, setShowHighlight] = useState(true);
   const [micStatus, setMicStatus] = useState("");
-  const [aimOffsetX, setAimOffsetX] = useState(0);
-  const [aimOffsetY, setAimOffsetY] = useState(0);
-  // Aim marker style/color + hideable "Listening" pill — added after user
-  // feedback (Reddit r/elgato): the red pill can distract during recording,
-  // and users asked for marker variants (e.g. Elgato-style frame, blue color).
-  const [aimStyle, setAimStyle] = useState("crosshair"); // crosshair | dot | frame
-  const [aimColor, setAimColor] = useState("#ffeb3b");
-  const [showListeningIndicator, setShowListeningIndicator] = useState(true);
-  // Co-host lines (">>" / "@Name:") — dim them and let voice tracking skip them
-  const [skipCoHostLines, setSkipCoHostLines] = useState(true);
   const [lineIsCoHost, setLineIsCoHost] = useState([]);
   // Toolbar overflow hints (mobile): which directions have hidden icons
   const [toolbarHints, setToolbarHints] = useState({
     left: false,
     right: false,
   });
-  const [textOpacity, setTextOpacity] = useState(0.8);
-  const [aimOpacity, setAimOpacity] = useState(1);
-  const [uiOpacity, setUiOpacity] = useState(0.9);
-  const [sidePaddingVw, setSidePaddingVw] = useState(10);
-  const [textAlignStyle, setTextAlignStyle] = useState("left");
-  const [mirrorX, setMirrorX] = useState(false);
-  const [toolbarPosition, setToolbarPosition] = useState("top"); // top | bottom
-  const [language, setLanguage] = useState("en-US");
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const languageBtnRef = useRef(null);
   const [languageMenuPos, setLanguageMenuPos] = useState({ top: 0, left: 0 });
@@ -152,20 +159,6 @@ Happy recording!`);
     } catch (error) {
       console.error("Failed to load support message state:", error);
       return true;
-    }
-  });
-  const [showSupportPrompts, setShowSupportPrompts] = useState(() => {
-    try {
-      return localStorage.getItem(SUPPORT_PROMPTS_KEY) !== "false";
-    } catch (_) {
-      return true;
-    }
-  });
-  const [uiLanguage, setUiLanguage] = useState(() => {
-    try {
-      return localStorage.getItem(UI_LANGUAGE_KEY) === "es" ? "es" : "en";
-    } catch (_) {
-      return "en";
     }
   });
   const [isIOS, setIsIOS] = useState(false);
@@ -195,9 +188,6 @@ Happy recording!`);
     { code: "pl-PL", label: "🇵🇱 Polski" },
     { code: "sv-SE", label: "🇸🇪 Svenska" },
   ];
-  const [paragraphHighlightOpacity, setParagraphHighlightOpacity] =
-    useState(0.12);
-  const [textFormat, setTextFormat] = useState("plain");
   const [linesWords, setLinesWords] = useState([]);
   const [lineStartIndex, setLineStartIndex] = useState([]);
   const [lineStyles, setLineStyles] = useState([]);
@@ -232,7 +222,6 @@ Happy recording!`);
     confirmImportSharedScript,
     confirmDeleteScript,
   } = useScriptLibrary({ text, setText, setLanguage });
-  const [paragraphSpacingPx, setParagraphSpacingPx] = useState(12);
   const [extraBottomSpacePx, setExtraBottomSpacePx] = useState(0);
 
   const recognitionRef = useRef(null);
@@ -502,214 +491,6 @@ Happy recording!`);
     } catch (_) {}
   }
 
-
-  const SETTINGS_KEY = "tp_settings_v1";
-  const defaultSettings = {
-    fontSize: 32,
-    margin: 20,
-    lineHeight: 1.5,
-    scrollSpeed: 94,
-    bgColor: "#000000",
-    textColor: "#ffffff",
-    highlightColor: "#ffeb3b",
-    followEnabled: false,
-    lookaheadWindow: 10,
-    paragraphLookahead: 3,
-    centerPaddingVh: 45,
-    showAim: true,
-    aimOffsetX: 0,
-    aimOffsetY: 0,
-    aimStyle: "crosshair",
-    aimColor: "#ffeb3b",
-    showListeningIndicator: true,
-    skipCoHostLines: true,
-    textOpacity: 0.8,
-    aimOpacity: 1,
-    uiOpacity: 0.9,
-    paragraphSpacingPx: 4,
-    sidePaddingVw: 20,
-    textAlignStyle: "left",
-    paragraphHighlightOpacity: 0.2,
-    language: "en-US",
-    mirrorX: false,
-    toolbarPosition: "top",
-    showSupportPrompts: true,
-    uiLanguage: "en",
-  };
-
-  const resetSettingsToDefault = () => {
-    setFontSize(defaultSettings.fontSize);
-    setMargin(defaultSettings.margin);
-    setLineHeight(defaultSettings.lineHeight);
-    setScrollSpeed(defaultSettings.scrollSpeed);
-    setBgColor(defaultSettings.bgColor);
-    setTextColor(defaultSettings.textColor);
-    setHighlightColor(defaultSettings.highlightColor);
-    setFollowEnabled(defaultSettings.followEnabled);
-    setLookaheadWindow(defaultSettings.lookaheadWindow);
-    setParagraphLookahead(defaultSettings.paragraphLookahead);
-    setCenterPaddingVh(defaultSettings.centerPaddingVh);
-    setShowAim(defaultSettings.showAim);
-    setAimOffsetX(defaultSettings.aimOffsetX);
-    setAimOffsetY(defaultSettings.aimOffsetY);
-    setAimStyle(defaultSettings.aimStyle);
-    setAimColor(defaultSettings.aimColor);
-    setShowListeningIndicator(defaultSettings.showListeningIndicator);
-    setSkipCoHostLines(defaultSettings.skipCoHostLines);
-    setTextOpacity(defaultSettings.textOpacity);
-    setAimOpacity(defaultSettings.aimOpacity);
-    setUiOpacity(defaultSettings.uiOpacity);
-    setParagraphSpacingPx(defaultSettings.paragraphSpacingPx);
-    setSidePaddingVw(defaultSettings.sidePaddingVw);
-    setTextAlignStyle(defaultSettings.textAlignStyle);
-    setParagraphHighlightOpacity(defaultSettings.paragraphHighlightOpacity);
-    setLanguage(defaultSettings.language);
-    setMirrorX(defaultSettings.mirrorX);
-    setToolbarPosition(defaultSettings.toolbarPosition);
-    setShowSupportPrompts(defaultSettings.showSupportPrompts);
-    setUiLanguage(defaultSettings.uiLanguage);
-    try {
-      localStorage.removeItem(SETTINGS_KEY);
-      localStorage.removeItem(SUPPORT_PROMPTS_KEY);
-      localStorage.removeItem(UI_LANGUAGE_KEY);
-    } catch (_) {}
-  };
-
-  // Load settings on mount
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(SETTINGS_KEY);
-      if (!raw) return;
-      const s = JSON.parse(raw);
-      if (s.fontSize != null) setFontSize(s.fontSize);
-      if (s.margin != null) setMargin(s.margin);
-      if (s.lineHeight != null) setLineHeight(s.lineHeight);
-      if (s.scrollSpeed != null) setScrollSpeed(s.scrollSpeed);
-      if (s.bgColor) setBgColor(s.bgColor);
-      if (s.textColor) setTextColor(s.textColor);
-      if (s.highlightColor) setHighlightColor(s.highlightColor);
-      if (typeof s.text === "string") setText(s.text);
-      if (s.followEnabled != null) setFollowEnabled(s.followEnabled);
-      if (s.lookaheadWindow != null) setLookaheadWindow(s.lookaheadWindow);
-      if (s.paragraphLookahead != null)
-        setParagraphLookahead(s.paragraphLookahead);
-      if (s.centerPaddingVh != null) setCenterPaddingVh(s.centerPaddingVh);
-      if (s.showAim != null) setShowAim(s.showAim);
-      if (s.aimOffsetX != null) setAimOffsetX(s.aimOffsetX);
-      if (s.aimOffsetY != null) setAimOffsetY(s.aimOffsetY);
-      if (s.aimStyle) setAimStyle(s.aimStyle);
-      if (s.aimColor) setAimColor(s.aimColor);
-      if (s.showListeningIndicator != null)
-        setShowListeningIndicator(s.showListeningIndicator);
-      if (s.skipCoHostLines != null) setSkipCoHostLines(s.skipCoHostLines);
-      if (s.textOpacity != null) setTextOpacity(s.textOpacity);
-      if (s.aimOpacity != null) setAimOpacity(s.aimOpacity);
-      if (s.uiOpacity != null) setUiOpacity(s.uiOpacity);
-      if (s.paragraphSpacingPx != null)
-        setParagraphSpacingPx(s.paragraphSpacingPx);
-      if (s.sidePaddingVw != null) setSidePaddingVw(s.sidePaddingVw);
-      if (s.textAlignStyle) setTextAlignStyle(s.textAlignStyle);
-      if (s.paragraphHighlightOpacity != null)
-        setParagraphHighlightOpacity(s.paragraphHighlightOpacity);
-      if (s.language) setLanguage(s.language);
-      if (s.mirrorX != null) setMirrorX(!!s.mirrorX);
-      if (s.toolbarPosition === "top" || s.toolbarPosition === "bottom")
-        setToolbarPosition(s.toolbarPosition);
-      if (s.showSupportPrompts != null)
-        setShowSupportPrompts(!!s.showSupportPrompts);
-      if (s.uiLanguage === "es" || s.uiLanguage === "en")
-        setUiLanguage(s.uiLanguage);
-      if (s.textFormat === "markdown" || s.textFormat === "plain")
-        setTextFormat(s.textFormat);
-    } catch (_) {}
-  }, []);
-
-  // Persist settings on change.
-  // Debounced (400ms): previously this serialized ALL settings PLUS the whole
-  // script text to localStorage on every keystroke — noticeable jank with
-  // long scripts. Also fixed: `language` and `mirrorX` were missing from the
-  // dependency array, so changing them alone was never persisted.
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const s = {
-        fontSize,
-        margin,
-        lineHeight,
-        scrollSpeed,
-        bgColor,
-        textColor,
-        highlightColor,
-        followEnabled,
-        lookaheadWindow,
-        paragraphLookahead,
-        centerPaddingVh,
-        showAim,
-        aimOffsetX,
-        aimOffsetY,
-        aimStyle,
-        aimColor,
-        showListeningIndicator,
-        skipCoHostLines,
-        textOpacity,
-        aimOpacity,
-        uiOpacity,
-        paragraphSpacingPx,
-        sidePaddingVw,
-        textAlignStyle,
-        paragraphHighlightOpacity,
-        language,
-        mirrorX,
-        toolbarPosition,
-        textFormat,
-        showSupportPrompts,
-        uiLanguage,
-
-        text,
-      };
-      try {
-        localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
-        localStorage.setItem(
-          SUPPORT_PROMPTS_KEY,
-          showSupportPrompts ? "true" : "false"
-        );
-        localStorage.setItem(UI_LANGUAGE_KEY, uiLanguage);
-      } catch (_) {}
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [
-    fontSize,
-    margin,
-    lineHeight,
-    scrollSpeed,
-    bgColor,
-    textColor,
-    highlightColor,
-    followEnabled,
-    lookaheadWindow,
-    paragraphLookahead,
-    centerPaddingVh,
-    showAim,
-    aimOffsetX,
-    aimOffsetY,
-    aimStyle,
-    aimColor,
-    showListeningIndicator,
-    skipCoHostLines,
-    textOpacity,
-    aimOpacity,
-    uiOpacity,
-    paragraphSpacingPx,
-    sidePaddingVw,
-    textAlignStyle,
-    paragraphHighlightOpacity,
-    language,
-    mirrorX,
-    toolbarPosition,
-    textFormat,
-    showSupportPrompts,
-    uiLanguage,
-    text,
-  ]);
 
   // Keep the co-host-skip flag in a ref so recognition callbacks (created
   // once per mic session) always see the current value without re-binding.
@@ -2521,770 +2302,64 @@ Happy recording!`);
               <div style={{ height: 8 }} />
             </div>
           ) : (
-            <>
-              <button
-                onClick={() => setShowResetConfirm(true)}
-                style={{
-                  width: "100%",
-                  marginBottom: "12px",
-                  padding: "10px 12px",
-                  borderRadius: "8px",
-                  border: "1px solid #555",
-                  background: "#b71c1c",
-                  color: "white",
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                }}
-              >
-                {t("resetSettings")}
-              </button>
-
-              <div style={{ marginBottom: "20px" }}>
-                <label
-                  style={{
-                    color: "white",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t("uiLanguage")}
-                </label>
-                <div style={{ display: "flex", gap: "8px" }}>
-                  {[
-                    ["en", t("english")],
-                    ["es", t("spanish")],
-                  ].map(([code, label]) => (
-                    <button
-                      key={code}
-                      onClick={() => setUiLanguage(code)}
-                      style={{
-                        flex: 1,
-                        padding: "10px 12px",
-                        borderRadius: "8px",
-                        border: "1px solid #555",
-                        background: uiLanguage === code ? "#2e7d32" : "#0f0f0f",
-                        color: "white",
-                        cursor: "pointer",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div style={{ marginBottom: "20px" }}>
-                <label
-                  style={{
-                    color: "white",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t("fontSize")}: {fontSize}px
-                </label>
-                <CustomSlider
-                  min={16}
-                  max={80}
-                  value={fontSize}
-                  onChange={setFontSize}
-                />
-              </div>
-
-              <div style={{ marginBottom: "20px" }}>
-                <label
-                  style={{
-                    color: "white",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t("sidePadding")}: {sidePaddingVw}vw
-                </label>
-                <CustomSlider
-                  min={0}
-                  max={40}
-                  value={sidePaddingVw}
-                  onChange={setSidePaddingVw}
-                />
-              </div>
-
-              {/* Text align controls removed per request */}
-
-              <div style={{ marginBottom: "20px" }}>
-                <label
-                  style={{
-                    color: "white",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t("textAlign")}
-                </label>
-                <div style={{ display: "flex", gap: "8px" }}>
-                  <button
-                    onClick={() => setTextAlignStyle("left")}
-                    style={{
-                      flex: 1,
-                      padding: "8px 10px",
-                      borderRadius: 6,
-                      border: "1px solid #555",
-                      background:
-                        textAlignStyle === "left" ? "#2e7d32" : "#0f0f0f",
-                      color: "white",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
-                    >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <line x1="3" y1="6" x2="21" y2="6" />
-                        <line x1="3" y1="12" x2="15" y2="12" />
-                        <line x1="3" y1="18" x2="18" y2="18" />
-                      </svg>
-                      {t("left")}
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => setTextAlignStyle("center")}
-                    style={{
-                      flex: 1,
-                      padding: "8px 10px",
-                      borderRadius: 6,
-                      border: "1px solid #555",
-                      background:
-                        textAlignStyle === "center" ? "#2e7d32" : "#0f0f0f",
-                      color: "white",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
-                    >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <line x1="6" y1="6" x2="18" y2="6" />
-                        <line x1="3" y1="12" x2="21" y2="12" />
-                        <line x1="6" y1="18" x2="18" y2="18" />
-                      </svg>
-                      {t("center")}
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => setTextAlignStyle("right")}
-                    style={{
-                      flex: 1,
-                      padding: "8px 10px",
-                      borderRadius: 6,
-                      border: "1px solid #555",
-                      background:
-                        textAlignStyle === "right" ? "#2e7d32" : "#0f0f0f",
-                      color: "white",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
-                    >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <line x1="3" y1="6" x2="21" y2="6" />
-                        <line x1="9" y1="12" x2="21" y2="12" />
-                        <line x1="6" y1="18" x2="21" y2="18" />
-                      </svg>
-                      {t("right")}
-                    </span>
-                  </button>
-                </div>
-              </div>
-
-              <div style={{ marginBottom: "20px" }}>
-                <label
-                  style={{
-                    color: "white",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t("lineHeight")}: {lineHeight.toFixed(1)}
-                </label>
-                <CustomSlider
-                  min={1}
-                  max={3}
-                  step={0.1}
-                  value={lineHeight}
-                  onChange={setLineHeight}
-                />
-              </div>
-
-              <div style={{ marginBottom: "20px" }}>
-                <label
-                  style={{
-                    color: "white",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t("paragraphSpacing")}: {paragraphSpacingPx}px
-                </label>
-                <CustomSlider
-                  min={0}
-                  max={40}
-                  value={paragraphSpacingPx}
-                  onChange={setParagraphSpacingPx}
-                />
-              </div>
-
-              <div style={{ marginBottom: "20px" }}>
-                <label
-                  style={{
-                    color: "white",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t("autoScrollSpeed")}: {scrollSpeed}
-                </label>
-                <CustomSlider
-                  min={10}
-                  max={200}
-                  value={scrollSpeed}
-                  onChange={setScrollSpeed}
-                />
-              </div>
-
-              <div style={{ marginBottom: "20px" }}>
-                <label
-                  style={{
-                    color: "white",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t("lookaheadWindow")}: {lookaheadWindow} {t("words")}
-                </label>
-                <CustomSlider
-                  min={1}
-                  max={40}
-                  value={lookaheadWindow}
-                  onChange={setLookaheadWindow}
-                />
-                <div
-                  style={{ color: "#aaa", fontSize: "12px", marginTop: "4px" }}
-                >
-                  {t("lookaheadHelp")}
-                </div>
-              </div>
-
-              <div style={{ marginBottom: "20px" }}>
-                <label
-                  style={{
-                    color: "white",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t("paragraphLookahead")}: {paragraphLookahead}{" "}
-                  {t("paragraphs")}
-                </label>
-                <CustomSlider
-                  min={0}
-                  max={6}
-                  value={paragraphLookahead}
-                  onChange={setParagraphLookahead}
-                />
-                <div
-                  style={{ color: "#aaa", fontSize: "12px", marginTop: "4px" }}
-                >
-                  {t("paragraphLookaheadHelp")}
-                </div>
-              </div>
-
-              <div style={{ marginBottom: "20px" }}>
-                <label
-                  style={{
-                    color: "white",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t("coHostLines")}: {skipCoHostLines ? t("skip") : t("off")}
-                </label>
-                <button
-                  onClick={() => setSkipCoHostLines(!skipCoHostLines)}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    borderRadius: "8px",
-                    border: "1px solid #555",
-                    background: skipCoHostLines ? "#2e7d32" : "#37474f",
-                    color: "white",
-                    cursor: "pointer",
-                  }}
-                  aria-label="Toggle co-host line skipping"
-                  title={t("coHostLinesTitle")}
-                >
-                  {skipCoHostLines ? t("enabled") : t("enable")}
-                </button>
-                <div
-                  style={{ color: "#aaa", fontSize: "12px", marginTop: "4px" }}
-                >
-                  {t("coHostLinesHelp")}
-                </div>
-              </div>
-
-              <div style={{ marginBottom: "20px" }}>
-                <label
-                  style={{
-                    color: "white",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t("textOpacity")}: {Math.round(textOpacity * 100)}%
-                </label>
-                <CustomSlider
-                  min={0.2}
-                  max={1}
-                  step={0.05}
-                  value={textOpacity}
-                  onChange={setTextOpacity}
-                />
-              </div>
-
-              <div style={{ marginBottom: "20px" }}>
-                <label
-                  style={{
-                    color: "white",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t("aimOpacity")}: {Math.round(aimOpacity * 100)}%
-                </label>
-                <CustomSlider
-                  min={0}
-                  max={1}
-                  step={0.05}
-                  value={aimOpacity}
-                  onChange={setAimOpacity}
-                />
-              </div>
-
-              <div style={{ marginBottom: "20px" }}>
-                <label
-                  style={{
-                    color: "white",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t("paragraphHighlightOpacity")}:{" "}
-                  {Math.round(paragraphHighlightOpacity * 100)}%
-                </label>
-                <CustomSlider
-                  min={0}
-                  max={0.6}
-                  step={0.02}
-                  value={paragraphHighlightOpacity}
-                  onChange={setParagraphHighlightOpacity}
-                />
-              </div>
-
-              <div style={{ marginBottom: "20px" }}>
-                <label
-                  style={{
-                    color: "white",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t("operationButtonsOpacity")}: {Math.round(uiOpacity * 100)}%
-                </label>
-                <CustomSlider
-                  min={0.2}
-                  max={1}
-                  step={0.05}
-                  value={uiOpacity}
-                  onChange={setUiOpacity}
-                />
-              </div>
-
-              <div style={{ marginBottom: "20px" }}>
-                <label
-                  style={{
-                    color: "white",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t("toolbarPosition")}: {t(toolbarPosition)}
-                </label>
-                <div style={{ display: "flex", gap: "8px" }}>
-                  {["top", "bottom"].map((pos) => (
-                    <button
-                      key={pos}
-                      onClick={() => setToolbarPosition(pos)}
-                      style={{
-                        flex: 1,
-                        padding: "10px 12px",
-                        borderRadius: "8px",
-                        border: "1px solid #555",
-                        background:
-                          toolbarPosition === pos ? "#2e7d32" : "#37474f",
-                        color: "white",
-                        cursor: "pointer",
-                      }}
-                    >
-                      {t(pos)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div style={{ marginBottom: "20px" }}>
-                <label
-                  style={{
-                    color: "white",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t("showAimMarker")}: {showAim ? t("enabled") : t("disabled")}
-                </label>
-                <button
-                  onClick={() => setShowAim(!showAim)}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    borderRadius: "8px",
-                    border: "1px solid #555",
-                    background: showAim ? "#2e7d32" : "#37474f",
-                    color: "white",
-                    cursor: "pointer",
-                    marginBottom: "10px",
-                  }}
-                  aria-label="Toggle Aim Indicator"
-                >
-                  {showAim ? t("disabled") : t("enable")}
-                </button>
-                <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
-                  <div style={{ flex: 1 }}>
-                    <label
-                      style={{
-                        color: "white",
-                        display: "block",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      {t("aimMarkerStyle")}
-                    </label>
-                    <div style={{ display: "flex", gap: "6px" }}>
-                      {[
-                        ["crosshair", t("crosshair")],
-                        ["dot", t("dot")],
-                        ["frame", t("frame")],
-                      ].map(([value, label]) => (
-                        <button
-                          key={value}
-                          onClick={() => setAimStyle(value)}
-                          aria-label={`${t("aimMarkerStyle")}: ${label}`}
-                          aria-pressed={aimStyle === value}
-                          style={{
-                            flex: 1,
-                            padding: "8px 4px",
-                            borderRadius: "6px",
-                            border:
-                              aimStyle === value
-                                ? "1px solid #90caf9"
-                                : "1px solid #555",
-                            background:
-                              aimStyle === value ? "#1565c0" : "#37474f",
-                            color: "white",
-                            cursor: "pointer",
-                            fontSize: "12px",
-                          }}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label
-                      style={{
-                        color: "white",
-                        display: "block",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      {t("aimMarkerColor")}
-                    </label>
-                    <div style={{ display: "flex", gap: "6px" }}>
-                      {[
-                        ["#ffeb3b", "Yellow"],
-                        ["#2196f3", "Blue"],
-                        ["#f44336", "Red"],
-                        ["#4caf50", "Green"],
-                        ["#ffffff", "White"],
-                      ].map(([value, label]) => (
-                        <button
-                          key={value}
-                          onClick={() => setAimColor(value)}
-                          title={label}
-                          aria-label={`Marker color: ${label}`}
-                          aria-pressed={aimColor === value}
-                          style={{
-                            flex: 1,
-                            height: "34px",
-                            borderRadius: "6px",
-                            border:
-                              aimColor === value
-                                ? "2px solid white"
-                                : "1px solid #555",
-                            background: value,
-                            cursor: "pointer",
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: "10px" }}>
-                  <div style={{ flex: 1 }}>
-                    <label
-                      style={{
-                        color: "white",
-                        display: "block",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      {t("horizontalOffset")}: {aimOffsetX}px
-                    </label>
-                    <CustomSlider
-                      min={-400}
-                      max={400}
-                      value={aimOffsetX}
-                      onChange={setAimOffsetX}
-                    />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label
-                      style={{
-                        color: "white",
-                        display: "block",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      {t("verticalOffset")}: {aimOffsetY}px
-                    </label>
-                    <CustomSlider
-                      min={-300}
-                      max={300}
-                      value={aimOffsetY}
-                      onChange={setAimOffsetY}
-                    />
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    setAimOffsetX(0);
-                    setAimOffsetY(0);
-                  }}
-                  style={{
-                    width: "100%",
-                    padding: "8px 12px",
-                    borderRadius: "6px",
-                    border: "1px solid #555",
-                    background: "#37474f",
-                    color: "white",
-                    cursor: "pointer",
-                    marginTop: "10px",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                  }}
-                  title={t("resetToCenter")}
-                >
-                  {t("resetToCenter")}
-                </button>
-              </div>
-
-              <div style={{ marginBottom: "20px" }}>
-                <label
-                  style={{
-                    color: "white",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t("listeningIndicator")}:{" "}
-                  {showListeningIndicator ? t("visible") : t("hidden")}
-                </label>
-                <button
-                  onClick={() =>
-                    setShowListeningIndicator(!showListeningIndicator)
-                  }
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    borderRadius: "8px",
-                    border: "1px solid #555",
-                    background: showListeningIndicator ? "#2e7d32" : "#37474f",
-                    color: "white",
-                    cursor: "pointer",
-                  }}
-                  aria-label="Toggle Listening Indicator"
-                  title={t("hideWhileRecording")}
-                >
-                  {showListeningIndicator ? t("hideWhileRecording") : t("show")}
-                </button>
-              </div>
-
-              <div style={{ marginBottom: "20px" }}>
-                <label
-                  style={{
-                    color: "white",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t("supportPrompts")}: {showSupportPrompts ? t("visible") : t("hidden")}
-                </label>
-                <button
-                  onClick={() => {
-                    const next = !showSupportPrompts;
-                    setShowSupportPrompts(next);
-                    if (!next) setShowSupportMessage(false);
-                  }}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    borderRadius: "8px",
-                    border: "1px solid #555",
-                    background: showSupportPrompts ? "#2e7d32" : "#37474f",
-                    color: "white",
-                    cursor: "pointer",
-                  }}
-                  aria-label="Toggle Support Prompts"
-                  title={t("supportPrompts")}
-                >
-                  {showSupportPrompts ? t("hideEverywhere") : t("show")}
-                </button>
-              </div>
-
-              <div style={{ marginBottom: "20px" }}>
-                <label
-                  style={{
-                    color: "white",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t("textCenteringOffset")}: {centerPaddingVh}vh
-                </label>
-                <CustomSlider
-                  min={0}
-                  max={60}
-                  value={centerPaddingVh}
-                  onChange={setCenterPaddingVh}
-                  onDragStart={() => setShowCenterLine(true)}
-                  onDragEnd={() => setShowCenterLine(false)}
-                />
-              </div>
-
-              <div style={{ marginBottom: "20px" }}>
-                <label
-                  style={{
-                    color: "white",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t("backgroundColor")}
-                </label>
-                <input
-                  type="color"
-                  value={bgColor}
-                  onChange={(e) => setBgColor(e.target.value)}
-                  style={{ width: "100%", height: "40px", cursor: "pointer" }}
-                />
-              </div>
-
-              <div style={{ marginBottom: "20px" }}>
-                <label
-                  style={{
-                    color: "white",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t("textColor")}
-                </label>
-                <input
-                  type="color"
-                  value={textColor}
-                  onChange={(e) => setTextColor(e.target.value)}
-                  style={{ width: "100%", height: "40px", cursor: "pointer" }}
-                />
-              </div>
-
-              <div style={{ marginBottom: "20px" }}>
-                <label
-                  style={{
-                    color: "white",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t("highlightColor")}
-                </label>
-                <input
-                  type="color"
-                  value={highlightColor}
-                  onChange={(e) => setHighlightColor(e.target.value)}
-                  style={{ width: "100%", height: "40px", cursor: "pointer" }}
-                />
-              </div>
-            </>
+            <SettingsPanel
+              t={t}
+              setShowResetConfirm={setShowResetConfirm}
+              uiLanguage={uiLanguage}
+              setUiLanguage={setUiLanguage}
+              fontSize={fontSize}
+              setFontSize={setFontSize}
+              sidePaddingVw={sidePaddingVw}
+              setSidePaddingVw={setSidePaddingVw}
+              textAlignStyle={textAlignStyle}
+              setTextAlignStyle={setTextAlignStyle}
+              lineHeight={lineHeight}
+              setLineHeight={setLineHeight}
+              paragraphSpacingPx={paragraphSpacingPx}
+              setParagraphSpacingPx={setParagraphSpacingPx}
+              scrollSpeed={scrollSpeed}
+              setScrollSpeed={setScrollSpeed}
+              lookaheadWindow={lookaheadWindow}
+              setLookaheadWindow={setLookaheadWindow}
+              paragraphLookahead={paragraphLookahead}
+              setParagraphLookahead={setParagraphLookahead}
+              skipCoHostLines={skipCoHostLines}
+              setSkipCoHostLines={setSkipCoHostLines}
+              textOpacity={textOpacity}
+              setTextOpacity={setTextOpacity}
+              aimOpacity={aimOpacity}
+              setAimOpacity={setAimOpacity}
+              paragraphHighlightOpacity={paragraphHighlightOpacity}
+              setParagraphHighlightOpacity={setParagraphHighlightOpacity}
+              uiOpacity={uiOpacity}
+              setUiOpacity={setUiOpacity}
+              toolbarPosition={toolbarPosition}
+              setToolbarPosition={setToolbarPosition}
+              showAim={showAim}
+              setShowAim={setShowAim}
+              aimStyle={aimStyle}
+              setAimStyle={setAimStyle}
+              aimColor={aimColor}
+              setAimColor={setAimColor}
+              aimOffsetX={aimOffsetX}
+              setAimOffsetX={setAimOffsetX}
+              aimOffsetY={aimOffsetY}
+              setAimOffsetY={setAimOffsetY}
+              showListeningIndicator={showListeningIndicator}
+              setShowListeningIndicator={setShowListeningIndicator}
+              showSupportPrompts={showSupportPrompts}
+              setShowSupportPrompts={setShowSupportPrompts}
+              setShowSupportMessage={setShowSupportMessage}
+              centerPaddingVh={centerPaddingVh}
+              setCenterPaddingVh={setCenterPaddingVh}
+              setShowCenterLine={setShowCenterLine}
+              bgColor={bgColor}
+              setBgColor={setBgColor}
+              textColor={textColor}
+              setTextColor={setTextColor}
+              highlightColor={highlightColor}
+              setHighlightColor={setHighlightColor}
+            />
           )}
         </div>
       )}
