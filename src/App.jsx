@@ -17,6 +17,11 @@ import TeleprompterLine from "./components/TeleprompterLine.jsx";
 import ResetConfirmModal from "./components/modals/ResetConfirmModal.jsx";
 import ShortcutsHelpModal from "./components/modals/ShortcutsHelpModal.jsx";
 import LanguageDropdown from "./components/LanguageDropdown.jsx";
+import ScriptList from "./components/ScriptList.jsx";
+import DeleteScriptConfirmModal from "./components/modals/DeleteScriptConfirmModal.jsx";
+import SharedScriptImportModal from "./components/modals/SharedScriptImportModal.jsx";
+import AddEditScriptModal from "./components/modals/AddEditScriptModal.jsx";
+import useScriptLibrary from "./hooks/useScriptLibrary.js";
 
 
 // Co-host speaker markers (GitHub #2): a line starting with ">>" or "@Name:"
@@ -199,17 +204,34 @@ Happy recording!`);
   const [showEditor, setShowEditor] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [showScriptList, setShowScriptList] = useState(false);
-  const [savedScripts, setSavedScripts] = useState([]);
-  const [showAddScript, setShowAddScript] = useState(false);
-  const [editScriptId, setEditScriptId] = useState(null);
-  const [addScriptName, setAddScriptName] = useState("");
-  const [addScriptText, setAddScriptText] = useState("");
-  const [addScriptLanguage, setAddScriptLanguage] = useState("en-US");
-  const [scriptFormTouched, setScriptFormTouched] = useState(false);
-  const [deleteScriptConfirm, setDeleteScriptConfirm] = useState(null);
-  const [pendingSharedScript, setPendingSharedScript] = useState(null);
-  const [shareBusyId, setShareBusyId] = useState(null);
+  const {
+    MAX_SCRIPTS,
+    showScriptList,
+    setShowScriptList,
+    savedScripts,
+    showAddScript,
+    setShowAddScript,
+    editScriptId,
+    addScriptName,
+    setAddScriptName,
+    addScriptText,
+    setAddScriptText,
+    addScriptLanguage,
+    setAddScriptLanguage,
+    scriptFormTouched,
+    deleteScriptConfirm,
+    setDeleteScriptConfirm,
+    pendingSharedScript,
+    setPendingSharedScript,
+    shareBusyId,
+    openAddScriptModal,
+    openEditScriptModal,
+    saveScript,
+    loadScript,
+    shareScript,
+    confirmImportSharedScript,
+    confirmDeleteScript,
+  } = useScriptLibrary({ text, setText, setLanguage });
   const [paragraphSpacingPx, setParagraphSpacingPx] = useState(12);
   const [extraBottomSpacePx, setExtraBottomSpacePx] = useState(0);
 
@@ -551,220 +573,6 @@ Happy recording!`);
       localStorage.removeItem(SUPPORT_PROMPTS_KEY);
       localStorage.removeItem(UI_LANGUAGE_KEY);
     } catch (_) {}
-  };
-
-  // Script Library
-  const SCRIPTS_KEY = "tp_scripts_v1";
-  const MAX_SCRIPTS = 50;
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(SCRIPTS_KEY);
-      if (raw) {
-        setSavedScripts(JSON.parse(raw));
-      } else {
-        // Migrate existing script from settings if present
-        const seeds = [];
-        try {
-          const settingsRaw = localStorage.getItem(SETTINGS_KEY);
-          if (settingsRaw) {
-            const s = JSON.parse(settingsRaw);
-            if (s.text && s.text.trim()) {
-              seeds.push({
-                id: "migrated",
-                name: "My Script",
-                text: s.text,
-                language: s.language || "en-US",
-                savedAt: new Date().toISOString(),
-              });
-            }
-          }
-        } catch (_) {}
-        // Always include the demo script
-        seeds.push({
-          id: "demo",
-          name: "Demo Script",
-          text,
-          language: "en-US",
-          savedAt: new Date().toISOString(),
-        });
-        setSavedScripts(seeds);
-        localStorage.setItem(SCRIPTS_KEY, JSON.stringify(seeds));
-      }
-    } catch (_) {}
-  }, []);
-
-  const saveScriptsToStorage = (scripts) => {
-    setSavedScripts(scripts);
-    try {
-      localStorage.setItem(SCRIPTS_KEY, JSON.stringify(scripts));
-    } catch (_) {}
-  };
-
-  const openAddScriptModal = () => {
-    setEditScriptId(null);
-    setAddScriptName("");
-    setAddScriptText("");
-    setAddScriptLanguage("en-US");
-    setScriptFormTouched(false);
-    setShowAddScript(true);
-  };
-
-  const openEditScriptModal = (script) => {
-    setEditScriptId(script.id);
-    setAddScriptName(script.name);
-    setAddScriptText(script.text);
-    setAddScriptLanguage(script.language || "en-US");
-    setScriptFormTouched(false);
-    setShowAddScript(true);
-  };
-
-  const saveScript = (andLoad) => {
-    setScriptFormTouched(true);
-    const trimmed = (addScriptName || "").trim();
-    if (!trimmed || !addScriptText.trim() || !addScriptLanguage) return;
-
-    let updated;
-    if (editScriptId) {
-      updated = savedScripts.map((s) =>
-        s.id === editScriptId
-          ? { ...s, name: trimmed, text: addScriptText, language: addScriptLanguage, savedAt: new Date().toISOString() }
-          : s
-      );
-    } else {
-      const newScript = {
-        id: Date.now().toString(),
-        name: trimmed,
-        text: addScriptText,
-        language: addScriptLanguage,
-        savedAt: new Date().toISOString(),
-      };
-      updated = [newScript, ...savedScripts].slice(0, MAX_SCRIPTS);
-    }
-    saveScriptsToStorage(updated);
-    setShowAddScript(false);
-    setEditScriptId(null);
-    if (andLoad) {
-      setText(addScriptText);
-      setLanguage(addScriptLanguage);
-    }
-  };
-
-  const loadScript = (script) => {
-    setText(script.text);
-    if (script.language) setLanguage(script.language);
-  };
-
-  // --- Share a script via link (Cloudflare Pages Function + KV) ---
-  // POST /api/share stores the script server-side for 30 days and returns a
-  // short id; the link opens the app on any device with ?share=<id>.
-  const shareScript = async (script) => {
-    if (shareBusyId) return;
-    setShareBusyId(script.id);
-    try {
-      const res = await fetch("/api/share", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: script.name,
-          text: script.text,
-          language: script.language || "en-US",
-        }),
-      });
-      if (!res.ok) {
-        alert(
-          res.status === 503
-            ? "Sharing is not configured on this deployment yet."
-            : "Could not create the share link. Please try again."
-        );
-        return;
-      }
-      const data = await res.json();
-      const url = `${window.location.origin}/app.html?share=${data.id}`;
-      let copied = false;
-      try {
-        await navigator.clipboard.writeText(url);
-        copied = true;
-      } catch (_) {}
-      alert(
-        (copied
-          ? "Share link copied to clipboard:\n\n"
-          : "Share link (copy it manually):\n\n") +
-          url +
-          "\n\nAnyone with the link can import this script. It expires in 30 days."
-      );
-    } catch (_) {
-      alert("Could not create the share link. Check your connection and try again.");
-    } finally {
-      setShareBusyId(null);
-    }
-  };
-
-  // Import a script that was shared via link (?share=<id>).
-  useEffect(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const shareId = params.get("share");
-      if (!shareId) return;
-      // Strip the param immediately so a reload doesn't re-import.
-      try {
-        const url = new URL(window.location.href);
-        url.searchParams.delete("share");
-        window.history.replaceState(
-          {},
-          "",
-          url.pathname + url.search + url.hash
-        );
-      } catch (_) {}
-      fetch(`/api/share/${encodeURIComponent(shareId)}`)
-        .then((r) =>
-          r.ok ? r.json() : Promise.reject(new Error(String(r.status)))
-        )
-        .then((data) => {
-          if (!data || typeof data.text !== "string" || !data.text.trim())
-            throw new Error("empty");
-          // Don't apply it yet — a link can come from anyone, so hold it
-          // until the user explicitly confirms the import (see the
-          // "Import Shared Script?" modal below).
-          setPendingSharedScript({
-            name: (data.title || "Shared script").slice(0, 100),
-            text: data.text,
-            language: data.language || "en-US",
-          });
-        })
-        .catch(() => {
-          alert("This share link is invalid or has expired.");
-        });
-    } catch (_) {}
-  }, []);
-
-  const confirmImportSharedScript = () => {
-    if (!pendingSharedScript) return;
-    const newScript = {
-      id: Date.now().toString(),
-      name: pendingSharedScript.name,
-      text: pendingSharedScript.text,
-      language: pendingSharedScript.language,
-      savedAt: new Date().toISOString(),
-    };
-    // Functional update: the fetch resolved before this click, so the saved
-    // scripts state may have changed since; never overwrite it blindly.
-    setSavedScripts((prev) => {
-      const updated = [newScript, ...prev].slice(0, MAX_SCRIPTS);
-      try {
-        localStorage.setItem(SCRIPTS_KEY, JSON.stringify(updated));
-      } catch (_) {}
-      return updated;
-    });
-    setText(pendingSharedScript.text);
-    if (pendingSharedScript.language) setLanguage(pendingSharedScript.language);
-    setPendingSharedScript(null);
-  };
-
-  const confirmDeleteScript = () => {
-    if (!deleteScriptConfirm) return;
-    saveScriptsToStorage(savedScripts.filter((s) => s.id !== deleteScriptConfirm.id));
-    setDeleteScriptConfirm(null);
   };
 
   // Load settings on mount
@@ -2698,149 +2506,18 @@ Happy recording!`);
               </div>
 
               {/* My Scripts section */}
-              <div style={{ marginTop: "14px" }}>
-                <button
-                  onClick={() => setShowScriptList((v) => !v)}
-                  style={{
-                    width: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "10px 14px",
-                    borderRadius: "8px",
-                    border: "1px solid #444",
-                    background: showScriptList ? "#1a1a1a" : "#0f0f0f",
-                    color: "white",
-                    cursor: "pointer",
-                    fontSize: "13px",
-                    fontWeight: "bold",
-                  }}
-                >
-                  <span>📚 {t("myScripts")} ({savedScripts.length}/{MAX_SCRIPTS})</span>
-                  <span style={{ fontSize: "10px", color: "#888" }}>
-                    {showScriptList ? "▲" : "▼"}
-                  </span>
-                </button>
-
-                {showScriptList && (
-                  <div style={{ marginTop: "10px" }}>
-                    <button
-                      onClick={openAddScriptModal}
-                      disabled={savedScripts.length >= MAX_SCRIPTS}
-                      style={{
-                        width: "100%",
-                        padding: "10px 14px",
-                        borderRadius: "8px",
-                        border: "1px dashed #555",
-                        background: "transparent",
-                        color: savedScripts.length >= MAX_SCRIPTS ? "#555" : "#4fc3f7",
-                        cursor: savedScripts.length >= MAX_SCRIPTS ? "default" : "pointer",
-                        fontSize: "13px",
-                        fontWeight: "bold",
-                        marginBottom: "10px",
-                      }}
-                    >
-                      + {t("addScript")}
-                    </button>
-
-                    {savedScripts.length === 0 ? (
-                      <div
-                        style={{
-                          color: "#666",
-                          fontSize: "13px",
-                          textAlign: "center",
-                          padding: "20px 12px",
-                          background: "#1a1a1a",
-                          borderRadius: "8px",
-                        }}
-                      >
-                        {t("noSavedScripts")}
-                      </div>
-                    ) : (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                        {savedScripts.map((script) => (
-                          <div
-                            key={script.id}
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "8px",
-                              background: "#1a1a1a",
-                              borderRadius: "6px",
-                              padding: "8px 10px",
-                            }}
-                          >
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div
-                                style={{
-                                  color: "white",
-                                  fontSize: "13px",
-                                  fontWeight: "bold",
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                  whiteSpace: "nowrap",
-                                }}
-                              >
-                                {script.name}
-                              </div>
-                              <div style={{ color: "#666", fontSize: "10px", marginTop: "1px" }}>
-                                {(languagesList.find((l) => l.code === script.language) || {}).label || script.language || "—"}
-                                {" · "}
-                                {script.text.split(/\s+/).filter(Boolean).length} {t("words")}
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => loadScript(script)}
-                              style={{
-                                padding: "5px 12px",
-                                borderRadius: "5px",
-                                border: "none",
-                                background: "#1565c0",
-                                color: "white",
-                                cursor: "pointer",
-                                fontSize: "12px",
-                                fontWeight: "bold",
-                                whiteSpace: "nowrap",
-                              }}
-                            >
-                              {t("load")}
-                            </button>
-                            <button
-                              onClick={() => openEditScriptModal(script)}
-                              style={{
-                                padding: "5px 10px",
-                                borderRadius: "5px",
-                                border: "1px solid #666",
-                                background: "transparent",
-                                color: "#ccc",
-                                cursor: "pointer",
-                                fontSize: "12px",
-                              }}
-                            >
-                              {t("edit")}
-                            </button>
-                            <button
-                              onClick={() => setDeleteScriptConfirm(script)}
-                              style={{
-                                padding: "5px 8px",
-                                borderRadius: "5px",
-                                border: "1px solid #b71c1c",
-                                background: "transparent",
-                                color: "#ef5350",
-                                cursor: "pointer",
-                                fontSize: "12px",
-                                fontWeight: "bold",
-                              }}
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+              <ScriptList
+                t={t}
+                languagesList={languagesList}
+                showScriptList={showScriptList}
+                setShowScriptList={setShowScriptList}
+                savedScripts={savedScripts}
+                MAX_SCRIPTS={MAX_SCRIPTS}
+                openAddScriptModal={openAddScriptModal}
+                openEditScriptModal={openEditScriptModal}
+                loadScript={loadScript}
+                setDeleteScriptConfirm={setDeleteScriptConfirm}
+              />
               <div style={{ height: 8 }} />
             </div>
           ) : (
@@ -3881,428 +3558,41 @@ Happy recording!`);
 
       {/* Delete Script Confirmation Modal */}
       {deleteScriptConfirm && (
-        <div
-          onClick={() => setDeleteScriptConfirm(null)}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0,0,0,0.8)",
-            zIndex: 21000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: "#111",
-              border: "2px solid rgba(255,255,255,0.15)",
-              borderRadius: "16px",
-              padding: "32px",
-              maxWidth: "400px",
-              width: "calc(100vw - 40px)",
-              boxShadow: "0 16px 48px rgba(0,0,0,0.6)",
-              textAlign: "center",
-            }}
-          >
-            <div style={{ fontSize: "40px", marginBottom: "16px" }}>🗑️</div>
-            <h2
-              style={{
-                color: "white",
-                margin: "0 0 12px",
-                fontSize: "20px",
-              }}
-            >
-              {t("deleteScriptTitle")}
-            </h2>
-            <p
-              style={{
-                color: "#aaa",
-                fontSize: "14px",
-                lineHeight: "1.5",
-                margin: "0 0 8px",
-              }}
-            >
-              {t("deleteScriptPrompt")}
-            </p>
-            <p
-              style={{
-                color: "white",
-                fontSize: "15px",
-                fontWeight: "bold",
-                margin: "0 0 24px",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              "{deleteScriptConfirm.name}"
-            </p>
-            <div
-              style={{ display: "flex", gap: "12px", justifyContent: "center" }}
-            >
-              <button
-                onClick={() => setDeleteScriptConfirm(null)}
-                style={{
-                  padding: "10px 24px",
-                  borderRadius: "8px",
-                  border: "1px solid #555",
-                  background: "#333",
-                  color: "white",
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                  fontSize: "14px",
-                }}
-              >
-                {t("cancel")}
-              </button>
-              <button
-                onClick={confirmDeleteScript}
-                style={{
-                  padding: "10px 24px",
-                  borderRadius: "8px",
-                  border: "none",
-                  background: "#b71c1c",
-                  color: "white",
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                  fontSize: "14px",
-                }}
-              >
-                {t("delete")}
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeleteScriptConfirmModal
+          t={t}
+          script={deleteScriptConfirm}
+          onCancel={() => setDeleteScriptConfirm(null)}
+          onConfirm={confirmDeleteScript}
+        />
       )}
 
       {/* Import Shared Script Confirmation Modal */}
       {pendingSharedScript && (
-        <div
-          onClick={() => setPendingSharedScript(null)}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0,0,0,0.8)",
-            zIndex: 21000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: "#111",
-              border: "2px solid rgba(255,255,255,0.15)",
-              borderRadius: "16px",
-              padding: "32px",
-              maxWidth: "400px",
-              width: "calc(100vw - 40px)",
-              boxShadow: "0 16px 48px rgba(0,0,0,0.6)",
-              textAlign: "center",
-            }}
-          >
-            <div style={{ fontSize: "40px", marginBottom: "16px" }}>🔗</div>
-            <h2
-              style={{
-                color: "white",
-                margin: "0 0 12px",
-                fontSize: "20px",
-              }}
-            >
-              {t("importSharedScriptTitle")}
-            </h2>
-            <p
-              style={{
-                color: "#aaa",
-                fontSize: "14px",
-                lineHeight: "1.5",
-                margin: "0 0 8px",
-              }}
-            >
-              {t("importSharedScriptBody")}
-            </p>
-            <p
-              style={{
-                color: "white",
-                fontSize: "15px",
-                fontWeight: "bold",
-                margin: "0 0 24px",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              "{pendingSharedScript.name}"
-            </p>
-            <div
-              style={{ display: "flex", gap: "12px", justifyContent: "center" }}
-            >
-              <button
-                onClick={() => setPendingSharedScript(null)}
-                style={{
-                  padding: "10px 24px",
-                  borderRadius: "8px",
-                  border: "1px solid #555",
-                  background: "#333",
-                  color: "white",
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                  fontSize: "14px",
-                }}
-              >
-                {t("cancel")}
-              </button>
-              <button
-                onClick={confirmImportSharedScript}
-                style={{
-                  padding: "10px 24px",
-                  borderRadius: "8px",
-                  border: "none",
-                  background: "#2e7d32",
-                  color: "white",
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                  fontSize: "14px",
-                }}
-              >
-                {t("importSharedScriptConfirm")}
-              </button>
-            </div>
-          </div>
-        </div>
+        <SharedScriptImportModal
+          t={t}
+          script={pendingSharedScript}
+          onCancel={() => setPendingSharedScript(null)}
+          onConfirm={confirmImportSharedScript}
+        />
       )}
 
       {/* Add / Edit Script Modal */}
       {showAddScript && (
-        <div
-          onClick={() => setShowAddScript(false)}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0,0,0,0.85)",
-            zIndex: 20000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: "#111",
-              border: "2px solid rgba(255,255,255,0.15)",
-              borderRadius: "16px",
-              padding: "28px",
-              maxWidth: "540px",
-              width: "calc(100vw - 40px)",
-              maxHeight: "85vh",
-              display: "flex",
-              flexDirection: "column",
-              boxShadow: "0 16px 48px rgba(0,0,0,0.6)",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "16px",
-              }}
-            >
-              <h2 style={{ color: "white", margin: 0, fontSize: "18px" }}>
-                {editScriptId ? t("editScriptTitle") : t("addScriptTitle")}
-              </h2>
-              <button
-                onClick={() => setShowAddScript(false)}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "#999",
-                  fontSize: "24px",
-                  cursor: "pointer",
-                  padding: "4px 8px",
-                }}
-              >
-                ×
-              </button>
-            </div>
-
-            <label
-              style={{
-                color: "#aaa",
-                fontSize: "12px",
-                marginBottom: "4px",
-              }}
-            >
-              {t("scriptName")}
-            </label>
-            <input
-              type="text"
-              value={addScriptName}
-              onChange={(e) => setAddScriptName(e.target.value)}
-              onKeyDown={(e) => e.stopPropagation()}
-              placeholder={t("scriptNamePlaceholder")}
-              style={{
-                padding: "10px 14px",
-                borderRadius: "8px",
-                border: `1px solid ${scriptFormTouched && !addScriptName.trim() ? "#b71c1c" : "#444"}`,
-                background: "#1a1a1a",
-                color: "white",
-                fontSize: "14px",
-                outline: "none",
-                marginBottom: scriptFormTouched && !addScriptName.trim() ? "4px" : "12px",
-              }}
-            />
-            {scriptFormTouched && !addScriptName.trim() && (
-              <div style={{ color: "#ef5350", fontSize: "12px", marginBottom: "8px" }}>
-                {t("scriptNameRequired")}
-              </div>
-            )}
-
-            <label
-              style={{
-                color: "#aaa",
-                fontSize: "12px",
-                marginBottom: "4px",
-              }}
-            >
-              {t("language")}
-            </label>
-            <select
-              value={addScriptLanguage}
-              onChange={(e) => setAddScriptLanguage(e.target.value)}
-              style={{
-                padding: "10px 14px",
-                borderRadius: "8px",
-                border: "1px solid #444",
-                background: "#1a1a1a",
-                color: "white",
-                fontSize: "14px",
-                outline: "none",
-                marginBottom: "12px",
-                cursor: "pointer",
-              }}
-            >
-              {languagesList.map((lng) => (
-                <option key={lng.code} value={lng.code}>
-                  {lng.label}
-                </option>
-              ))}
-            </select>
-
-            <label
-              style={{
-                color: "#aaa",
-                fontSize: "12px",
-                marginBottom: "4px",
-              }}
-            >
-              {t("scriptText")}
-            </label>
-            <textarea
-              value={addScriptText}
-              onChange={(e) => setAddScriptText(e.target.value)}
-              onKeyDown={(e) => e.stopPropagation()}
-              placeholder={t("scriptTextPlaceholder")}
-              style={{
-                flex: 1,
-                minHeight: "200px",
-                padding: "12px 14px",
-                borderRadius: "8px",
-                border: `1px solid ${scriptFormTouched && !addScriptText.trim() ? "#b71c1c" : "#444"}`,
-                background: "#1a1a1a",
-                color: "white",
-                fontSize: "14px",
-                fontFamily: "inherit",
-                outline: "none",
-                resize: "vertical",
-                marginBottom: scriptFormTouched && !addScriptText.trim() ? "4px" : "16px",
-              }}
-            />
-            {scriptFormTouched && !addScriptText.trim() && (
-              <div style={{ color: "#ef5350", fontSize: "12px", marginBottom: "12px" }}>
-                {t("scriptTextRequired")}
-              </div>
-            )}
-            <div
-              style={{
-                color: "#888",
-                fontSize: "12px",
-                marginTop: "-8px",
-                marginBottom: "12px",
-                lineHeight: 1.5,
-              }}
-            >
-              💡 {t("coHostTip")}
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                gap: "10px",
-                justifyContent: "flex-end",
-              }}
-            >
-              <button
-                onClick={() => setShowAddScript(false)}
-                style={{
-                  padding: "10px 20px",
-                  borderRadius: "8px",
-                  border: "1px solid #555",
-                  background: "#333",
-                  color: "white",
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                  fontSize: "13px",
-                }}
-              >
-                {t("cancel")}
-              </button>
-              <button
-                onClick={() => saveScript(false)}
-                style={{
-                  padding: "10px 20px",
-                  borderRadius: "8px",
-                  border: "none",
-                  background: "#2e7d32",
-                  color: "white",
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                  fontSize: "13px",
-                }}
-              >
-                {t("save")}
-              </button>
-              <button
-                onClick={() => saveScript(true)}
-                style={{
-                  padding: "10px 20px",
-                  borderRadius: "8px",
-                  border: "none",
-                  background: "#1565c0",
-                  color: "white",
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                  fontSize: "13px",
-                }}
-              >
-                {t("saveAndLoad")}
-              </button>
-            </div>
-          </div>
-        </div>
+        <AddEditScriptModal
+          t={t}
+          languagesList={languagesList}
+          editScriptId={editScriptId}
+          addScriptName={addScriptName}
+          setAddScriptName={setAddScriptName}
+          addScriptLanguage={addScriptLanguage}
+          setAddScriptLanguage={setAddScriptLanguage}
+          addScriptText={addScriptText}
+          setAddScriptText={setAddScriptText}
+          scriptFormTouched={scriptFormTouched}
+          onClose={() => setShowAddScript(false)}
+          onSave={() => saveScript(false)}
+          onSaveAndLoad={() => saveScript(true)}
+        />
       )}
 
       {/* Reset Confirmation Modal */}
