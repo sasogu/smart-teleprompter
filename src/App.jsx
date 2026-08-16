@@ -1406,8 +1406,15 @@ Happy recording!`);
     // "@Name:" lines) are excluded when skipping is enabled, so the window
     // "flows over" another speaker's block no matter how long it is —
     // the window budget is only spent on the presenter's own words.
+    // The search NEVER crosses into the next paragraph: a coincidental
+    // repeated word/phrase there would otherwise win over the real (but
+    // unmatched, e.g. misheard) continuation in the current paragraph.
+    // Crossing paragraphs is left to the stricter findResyncMatch fallback.
     const skip = skipCoHostRef.current ? skippableWordsRef.current : null;
-    const total = normalizedWordsRef.current.length;
+    const total = Math.min(
+      normalizedWordsRef.current.length,
+      getParagraphEndIndex(startIndex - 1) + 1
+    );
     const searchIdx = [];
     for (
       let i = startIndex;
@@ -1472,6 +1479,22 @@ Happy recording!`);
     const start = starts[lineIdx] ?? 0;
     const end = (starts[lineIdx + 1] ?? wordsRef.current.length) - 1;
     return { start, end };
+  };
+
+  // Word index where the paragraph containing `wIdx` ends (paragraphs are
+  // separated by empty lines). Used to keep normal token-advance matching
+  // from latching onto a coincidental repeat in the following paragraph —
+  // a nearby "false" match wins if it isn't disambiguated by boundary.
+  const getParagraphEndIndex = (wIdx) => {
+    const lines = linesWordsRef.current;
+    const starts = lineStartIndexRef.current;
+    if (!starts || starts.length === 0) return wordsRef.current.length - 1;
+    const lineIdx = getLineIdxForWord(wIdx);
+    let i = lineIdx;
+    while (i < lines.length && lines[i].length > 0) i++;
+    const endLine = Math.min(i, lines.length) - 1;
+    if (endLine < 0) return wordsRef.current.length - 1;
+    return (starts[endLine + 1] ?? wordsRef.current.length) - 1;
   };
 
   // Word index where the NEXT paragraph after the one containing `wIdx`

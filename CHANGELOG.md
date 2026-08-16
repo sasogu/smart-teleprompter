@@ -5,6 +5,12 @@ All notable changes to Smart Teleprompter will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.4] - 2026-08-16
+
+### Fixed
+
+- Normal (non-resync) word tracking no longer crosses into the next paragraph. `tryAdvanceByTokens` — the fast path used on every recognition result before the stricter resync fallback — searched an exact 2/3-gram over a plain lookahead window with no paragraph boundary, so a word or short phrase repeated in the current paragraph and again at the start of the next one could make the tracker jump ahead a full paragraph. The search is now bounded to the end of the current paragraph; crossing into the next one is left entirely to `findResyncMatch`, which already requires a 3-gram with at least 2 exact matches.
+
 ## [2.4.3] - 2026-08-12
 
 ### Changed
